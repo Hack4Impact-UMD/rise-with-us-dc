@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "rise-dc-dev",
+    "dev": "rise-dc-dev",
+    "prod": "rise-dc-prod"
+  }
+}

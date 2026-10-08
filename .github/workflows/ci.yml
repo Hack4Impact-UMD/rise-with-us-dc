@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kotlin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Lint
+        run: ./gradlew ktlintCheck detekt
+      - name: Test (Android host + wasm)
+        run: ./gradlew allTests
+      - name: Build Android + web
+        run: >-
+          ./gradlew
+          :apps:recipes:androidApp:assembleDebug :apps:transit:androidApp:assembleDebug
+          :apps:recipes:wasmJsBrowserDistribution :apps:transit:wasmJsBrowserDistribution
+
+  functions:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+      - run: npm run build

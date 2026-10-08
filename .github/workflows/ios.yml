@@ -1,0 +1,28 @@
+name: iOS
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    # Self-hosted M4 Mac mini (separate user). Never run fork PRs on it.
+    # TODO(ci): add the GitHub-hosted macOS fallback once the runner label is final.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, macOS, ARM64]
+    strategy:
+      matrix:
+        app: [Recipes, Transit]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Build ${{ matrix.app }} for the simulator
+        working-directory: iosApp/${{ matrix.app }}
+        run: >-
+          xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration Debug
+          -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build

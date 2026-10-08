@@ -1,0 +1,22 @@
+# Overrides on top of detekt's default config (buildUponDefaultConfig = true).
+# Compose code uses PascalCase @Composable functions, long parameter lists of slots, and dp literals.
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+  # Compose files group related declarations (Color.kt, Buttons.kt, a screen next to its ViewModel).
+  MatchingDeclarationName:
+    active: false
+
+complexity:
+  LongParameterList:
+    ignoreAnnotated: ['Composable']
+  LongMethod:
+    ignoreAnnotated: ['Composable']
+
+style:
+  MagicNumber:
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreAnnotated: ['Composable', 'Preview']
+  UnusedPrivateFunction:
+    ignoreAnnotated: ['Preview']
