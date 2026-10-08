@@ -1,4 +1,4 @@
-# rise-dc
+# rise-with-us-dc
 
 RISE DC apps (Recipes, Transit) for Android, iOS and web. Kotlin Multiplatform + Compose Multiplatform, Firebase backend.
 
