@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import org.hack4impact.risedc.core.common.location.LocationResult.Unavailable.Reason
 import platform.CoreLocation.CLAccuracyAuthorization.CLAccuracyAuthorizationReducedAccuracy
 import platform.CoreLocation.CLLocation
 import platform.CoreLocation.CLLocationManager
@@ -24,13 +25,20 @@ import kotlin.coroutines.resume
 private const val MILLIS_PER_SECOND = 1_000
 
 internal class IosLocationProvider : LocationProvider {
-    // Use the main thread to receive location updates
-    override suspend fun currentLocation(): LocationResult = withContext(Dispatchers.Main) {
-        val request = IosLocationRequest()
-        try {
-            request.currentLocation()
-        } finally {
-            request.close()
+    override suspend fun currentLocation(): LocationResult {
+        // Keep this blocking system check off the main thread
+        val servicesEnabled = withContext(Dispatchers.Default) { CLLocationManager.locationServicesEnabled() }
+        if (!servicesEnabled) {
+            return LocationResult.Unavailable(Reason.ServicesDisabled)
+        }
+        // Use the main thread to receive location updates
+        return withContext(Dispatchers.Main) {
+            val request = IosLocationRequest()
+            try {
+                request.currentLocation()
+            } finally {
+                request.close()
+            }
         }
     }
 }
@@ -48,9 +56,6 @@ private class IosLocationRequest :
     }
 
     suspend fun currentLocation(): LocationResult {
-        if (!CLLocationManager.locationServicesEnabled()) {
-            return LocationResult.Unavailable("location services are disabled")
-        }
         // Exclude the permission prompt from the timeout
         return authorize() ?: withLocationTimeout {
             suspendCancellableCoroutine { continuation ->
@@ -64,7 +69,7 @@ private class IosLocationRequest :
     private suspend fun authorize(): LocationResult? {
         if (manager.authorizationStatus == kCLAuthorizationStatusNotDetermined) {
             if (NSBundle.mainBundle.objectForInfoDictionaryKey("NSLocationWhenInUseUsageDescription") == null) {
-                return LocationResult.Unavailable("location permission description is missing")
+                return LocationResult.Unavailable(Reason.Misconfigured, "missing NSLocationWhenInUseUsageDescription")
             }
             suspendCancellableCoroutine { continuation ->
                 authorization = continuation
@@ -101,12 +106,12 @@ private class IosLocationRequest :
                 timestampMillis = (receivedLocation.timestamp.timeIntervalSince1970 * MILLIS_PER_SECOND).toLong(),
             ).validated()
         }
-            ?: LocationResult.Unavailable("current location is unavailable")
+            ?: LocationResult.Unavailable(Reason.NoFix, "no location was returned")
         complete(result)
     }
 
     override fun locationManager(manager: CLLocationManager, didFailWithError: NSError) {
-        complete(permissionFailure() ?: LocationResult.Unavailable("current location is unavailable"))
+        complete(permissionFailure() ?: LocationResult.Unavailable(Reason.NoFix, "location request failed"))
     }
 
     fun close() {
@@ -118,7 +123,6 @@ private class IosLocationRequest :
     }
 
     private fun permissionFailure(): LocationResult? = when {
-        !CLLocationManager.locationServicesEnabled() -> LocationResult.Unavailable("location services are disabled")
         manager.authorizationStatus != kCLAuthorizationStatusAuthorizedAlways &&
             manager.authorizationStatus != kCLAuthorizationStatusAuthorizedWhenInUse -> LocationResult.PermissionDenied
         manager.accuracyAuthorization == CLAccuracyAuthorizationReducedAccuracy -> LocationResult.ApproximateOnly

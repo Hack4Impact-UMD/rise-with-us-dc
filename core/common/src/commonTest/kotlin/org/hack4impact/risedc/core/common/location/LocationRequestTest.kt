@@ -8,6 +8,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
+import org.hack4impact.risedc.core.common.location.LocationResult.Unavailable.Reason
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -40,7 +41,9 @@ class LocationRequestTest {
             location.copy(accuracyMeters = Double.NaN),
             location.copy(accuracyMeters = Double.POSITIVE_INFINITY),
         )
-        invalidLocations.forEach { assertEquals(LocationResult.Unavailable("invalid location"), it.validated()) }
+        invalidLocations.forEach {
+            assertEquals(LocationResult.Unavailable(Reason.NoFix, "invalid location"), it.validated())
+        }
     }
 
     @Test
@@ -54,6 +57,8 @@ class LocationRequestTest {
     @Test
     fun returnsCompletedResult() = runTest {
         assertEquals(location, withLocationTimeout { location })
+        val unavailable = LocationResult.Unavailable(Reason.NoFix, "location request failed")
+        assertEquals(unavailable, withLocationTimeout { unavailable })
     }
 
     @Test
@@ -65,7 +70,7 @@ class LocationRequestTest {
                 continuation.invokeOnCancellation { cleanedUp = true }
             }
         }
-        assertEquals(LocationResult.Unavailable("location request timed out"), result)
+        assertEquals(LocationResult.Unavailable(Reason.TimedOut), result)
         assertEquals(30_000L, testScheduler.currentTime - startedAt)
         assertTrue(cleanedUp)
     }

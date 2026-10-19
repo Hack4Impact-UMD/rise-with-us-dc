@@ -12,6 +12,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.hack4impact.risedc.core.common.location.LocationResult.Unavailable.Reason
 import kotlin.coroutines.resume
 
 internal class AndroidLocationProvider(context: Context) : LocationProvider {
@@ -25,7 +26,7 @@ internal class AndroidLocationProvider(context: Context) : LocationProvider {
             if (isLocationEnabled()) {
                 requestLocation()
             } else {
-                LocationResult.Unavailable("location services are unavailable")
+                LocationResult.Unavailable(Reason.ServicesDisabled)
             }
         } catch (_: SecurityException) {
             permissionFailure() ?: LocationResult.PermissionDenied
@@ -50,11 +51,11 @@ internal class AndroidLocationProvider(context: Context) : LocationProvider {
                 if (continuation.isActive) {
                     // Recheck permission after the request
                     val result = permissionFailure() ?: when {
-                        task.isCanceled -> LocationResult.Unavailable("location request was cancelled")
+                        task.isCanceled -> LocationResult.Unavailable(Reason.NoFix, "location request was cancelled")
                         task.isSuccessful -> task.result?.toResult()
-                            ?: LocationResult.Unavailable("current location is unavailable")
+                            ?: LocationResult.Unavailable(Reason.NoFix, "no location was returned")
                         task.exception is SecurityException -> LocationResult.PermissionDenied
-                        else -> LocationResult.Unavailable("current location is unavailable")
+                        else -> LocationResult.Unavailable(Reason.NoFix, "location request failed")
                     }
                     continuation.resume(result)
                 }
@@ -83,7 +84,7 @@ internal class AndroidLocationProvider(context: Context) : LocationProvider {
 
     private fun Location.toResult(): LocationResult {
         if (!hasAccuracy()) {
-            return LocationResult.Unavailable("location accuracy is unavailable")
+            return LocationResult.Unavailable(Reason.NoFix, "location accuracy is unavailable")
         }
         return LocationResult.Success(
             lat = latitude,
