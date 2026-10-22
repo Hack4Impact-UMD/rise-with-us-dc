@@ -13,6 +13,8 @@ kotlin {
             implementation(libs.ktor.serialization.json)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.no.arg)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
@@ -26,6 +28,8 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
+            implementation(libs.multiplatform.settings.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }
