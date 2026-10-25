@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import org.hack4impact.risedc.core.ui.placeholder.PlaceholderScreen
+import org.hack4impact.risedc.transit.dev.DevScreen
 
 // Sample arguments so the placeholder graph can be clicked through before real data exists.
 private const val SAMPLE_TRIP_ID = "sample-trip"
@@ -25,6 +26,7 @@ fun TransitNavHost(navController: NavHostController = rememberNavController()) {
                     "Saved trip" to { navController.navigate(TransitRoute.TripOverview(tripId = SAMPLE_TRIP_ID)) },
                     "Places" to { navController.navigate(TransitRoute.Places) },
                     "Staff" to { navController.navigate(TransitRoute.StaffHome) },
+                    "Dev" to { navController.navigate(TransitRoute.Dev)},
                 ),
             )
         }
@@ -80,6 +82,9 @@ fun TransitNavHost(navController: NavHostController = rememberNavController()) {
         }
         composable<TransitRoute.StaffPlaces> {
             PlaceholderScreen(title = "Staff Places", onBack = back)
+        }
+        composable<TransitRoute.Dev> {
+            DevScreen()
         }
     }
 }

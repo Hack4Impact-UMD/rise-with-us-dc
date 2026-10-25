@@ -34,4 +34,7 @@ sealed interface TransitRoute {
 
     @Serializable
     data object StaffPlaces : TransitRoute
+
+    @Serializable
+    data object Dev : TransitRoute
 }
