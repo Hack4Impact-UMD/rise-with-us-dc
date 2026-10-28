@@ -4,6 +4,8 @@ package org.hack4impact.risedc.core.common.speech
 
 import kotlinx.cinterop.ObjCSignatureOverride
 import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.AVAudioSessionCategoryOptionDuckOthers
+import platform.AVFAudio.AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFAudio.AVAudioSessionInterruptionNotification
 import platform.AVFAudio.AVAudioSessionInterruptionTypeBegan
@@ -102,10 +104,11 @@ internal class IosSpeaker : Speaker {
             }
         }
 
+        // Lower music and pause other speech while TTS plays
         val configured = audioSession.setCategory(
             AVAudioSessionCategoryPlayback,
             AVAudioSessionModeVoicePrompt,
-            0uL,
+            AVAudioSessionCategoryOptionDuckOthers or AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers,
             null,
         )
         audioActive = configured && audioSession.setActive(true, null)
@@ -132,9 +135,12 @@ internal class IosSpeaker : Speaker {
     }
 
     private fun englishVoice(): AVSpeechSynthesisVoice? {
+        val preferred = AVSpeechSynthesisVoice.voiceWithLanguage("en-US")
         val voices = AVSpeechSynthesisVoice.speechVoices().filterIsInstance<AVSpeechSynthesisVoice>()
             .filter { it.voiceTraits and AVSpeechSynthesisVoiceTraitIsNoveltyVoice == 0uL }
-        return voices.firstOrNull { it.language == "en-US" }
+        // Use preferred voice set in Accessibility settings
+        return voices.firstOrNull { it.language == "en-US" && it.identifier == preferred?.identifier }
+            ?: voices.firstOrNull { it.language == "en-US" }
             ?: voices.firstOrNull { it.language == "en" || it.language.startsWith("en-") }
     }
 

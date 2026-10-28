@@ -82,7 +82,9 @@ private class AndroidSpeechEngine(private val context: Context) {
     private var focusGranted = false
     private var focusRequest: AudioFocusRequest? = null
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
-        if (change < 0) handler.post { request.finish(SpeakResult.Stopped) }
+        if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+            handler.post { request.finish(SpeakResult.Stopped) }
+        }
     }
     private val noisyReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
