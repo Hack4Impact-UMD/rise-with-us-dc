@@ -21,7 +21,6 @@ import platform.AVFAudio.AVSpeechSynthesisVoiceTraitIsNoveltyVoice
 import platform.AVFAudio.AVSpeechSynthesizer
 import platform.AVFAudio.AVSpeechSynthesizerDelegateProtocol
 import platform.AVFAudio.AVSpeechUtterance
-import platform.AVFAudio.AVSpeechUtteranceDefaultSpeechRate
 import platform.AVFAudio.setActive
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSNumber
@@ -117,7 +116,6 @@ internal class IosSpeaker : Speaker {
         } else if (request.isActive) {
             val utterance = AVSpeechUtterance(string = text).apply {
                 this.voice = voice
-                rate = AVSpeechUtteranceDefaultSpeechRate * SPEECH_RATE_FACTOR
             }
             playback = Playback(utterance, request)
             synthesizer.speakUtterance(utterance)

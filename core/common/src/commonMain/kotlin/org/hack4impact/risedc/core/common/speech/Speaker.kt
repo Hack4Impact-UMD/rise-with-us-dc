@@ -23,6 +23,3 @@ sealed interface SpeakResult {
     data object Stopped : SpeakResult
     data class Unavailable(val reason: String) : SpeakResult
 }
-
-// Reduce speed rate to make instructions easier to follow
-internal const val SPEECH_RATE_FACTOR = 0.9f

@@ -118,7 +118,6 @@ private class AndroidSpeechEngine(private val context: Context) {
         val voice = voices.firstOrNull { it.locale == Locale.US } ?: voices.firstOrNull()
             ?: return "An installed local English voice is unavailable."
         if (tts.setVoice(voice) != TextToSpeech.SUCCESS) return "Speech engine configuration failed."
-        tts.setSpeechRate(SPEECH_RATE_FACTOR)
         tts.setOnUtteranceProgressListener(progressListener())
         val attributes = AudioAttributes.Builder()
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)

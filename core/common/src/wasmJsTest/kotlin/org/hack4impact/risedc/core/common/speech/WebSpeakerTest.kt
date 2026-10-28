@@ -27,6 +27,7 @@ class WebSpeakerTest {
         }
         assertEquals(1, engine.spoken.length)
         assertEquals(text, engine.spoken[0]?.text)
+        assertEquals(1.0, engine.spoken[0]?.rate)
         assertFalse(pending.isCompleted)
         engine.start(0)
         assertTrue(speaker.isSpeaking.value)
@@ -149,6 +150,7 @@ private external interface FakeSynthesis : WebSpeechSynthesis {
 
 private external interface FakeUtterance : WebUtterance {
     val text: String
+    val rate: Double
 }
 
 private fun fakeSynthesis(): FakeSynthesis = js(

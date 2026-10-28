@@ -47,7 +47,6 @@ internal class WebSpeaker(
                 utterance = speech
                 speech.voice = selectedVoice
                 speech.lang = selectedVoice.lang
-                speech.rate = SPEECH_RATE_FACTOR.toDouble()
                 speech.onstart = { request.started() }
                 speech.onend = { request.finish(SpeakResult.Done) }
                 speech.onerror = { event ->
@@ -98,7 +97,6 @@ internal external interface WebVoice : JsAny {
 internal external interface WebUtterance : JsAny {
     var voice: WebVoice?
     var lang: String
-    var rate: Double
     var onstart: (() -> Unit)?
     var onend: (() -> Unit)?
     var onerror: ((WebSpeechError) -> Unit)?
