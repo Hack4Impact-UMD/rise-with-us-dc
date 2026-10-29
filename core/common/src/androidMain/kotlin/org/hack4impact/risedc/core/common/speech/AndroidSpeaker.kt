@@ -195,7 +195,10 @@ private class AndroidSpeechEngine(
                 !voice.isNetworkConnectionRequired &&
                 voice.features?.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) != true
         }
-        val voice = voices.firstOrNull { it.locale == Locale.US } ?: voices.firstOrNull()
+        val defaultVoice = tts.defaultVoice
+        val voice = voices.firstOrNull { it.name == defaultVoice?.name }
+            ?: voices.firstOrNull { it.locale == Locale.US }
+            ?: voices.firstOrNull()
             ?: return "An installed local English voice is unavailable."
         if (tts.setVoice(voice) != TextToSpeech.SUCCESS) return "Speech engine configuration failed."
         val attributes = AudioAttributes.Builder()
