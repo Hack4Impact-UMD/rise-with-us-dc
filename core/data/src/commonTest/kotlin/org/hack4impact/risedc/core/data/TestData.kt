@@ -8,6 +8,7 @@ import org.hack4impact.risedc.core.data.model.RecipeSource
 import org.hack4impact.risedc.core.data.model.RecipeStatus
 import org.hack4impact.risedc.core.data.model.RecipeStep
 import org.hack4impact.risedc.core.data.model.StoreSection
+import org.hack4impact.risedc.core.data.model.GroceryItem
 
 internal object TestData {
     val json = Json { ignoreUnknownKeys = true }
