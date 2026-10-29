@@ -1,6 +1,7 @@
 package org.hack4impact.risedc.core.data
 
 import kotlinx.serialization.json.Json
+import org.hack4impact.risedc.core.data.model.GroceryItem
 import org.hack4impact.risedc.core.data.model.Ingredient
 import org.hack4impact.risedc.core.data.model.MealType
 import org.hack4impact.risedc.core.data.model.Recipe
@@ -8,7 +9,6 @@ import org.hack4impact.risedc.core.data.model.RecipeSource
 import org.hack4impact.risedc.core.data.model.RecipeStatus
 import org.hack4impact.risedc.core.data.model.RecipeStep
 import org.hack4impact.risedc.core.data.model.StoreSection
-import org.hack4impact.risedc.core.data.model.GroceryItem
 
 internal object TestData {
     val json = Json { ignoreUnknownKeys = true }

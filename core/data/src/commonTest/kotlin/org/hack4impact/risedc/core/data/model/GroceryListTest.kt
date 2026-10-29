@@ -29,12 +29,12 @@ class GroceryListTest {
             GroceryList(
                 id = "list-1",
                 items =
-                    listOf(
-                        item("Ice cream", section = StoreSection.FROZEN),
-                        item("Milk", section = StoreSection.DAIRY_AND_EGGS),
-                        item("Apples", section = StoreSection.PRODUCE),
-                        item("Bananas", section = StoreSection.PRODUCE),
-                    ),
+                listOf(
+                    item("Ice cream", section = StoreSection.FROZEN),
+                    item("Milk", section = StoreSection.DAIRY_AND_EGGS),
+                    item("Apples", section = StoreSection.PRODUCE),
+                    item("Bananas", section = StoreSection.PRODUCE),
+                ),
             )
         val grouped = list.groupedBySection()
 

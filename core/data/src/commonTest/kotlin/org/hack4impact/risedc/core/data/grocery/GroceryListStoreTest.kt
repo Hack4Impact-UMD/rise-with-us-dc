@@ -14,18 +14,16 @@ class GroceryListStoreTest {
     private val settings = MapSettings()
 
     @Test
-    fun listIsSavedAndReloaded() =
-        runTest {
-            val list = GroceryList(id = "list-1", items = listOf(item("Milk", gotIt = true), item("Eggs")))
-            GroceryListStore(settings, RiseJson).save(list)
-            assertEquals(list, GroceryListStore(settings, RiseJson).get("list-1"))
-        }
+    fun listIsSavedAndReloaded() = runTest {
+        val list = GroceryList(id = "list-1", items = listOf(item("Milk", gotIt = true), item("Eggs")))
+        GroceryListStore(settings, RiseJson).save(list)
+        assertEquals(list, GroceryListStore(settings, RiseJson).get("list-1"))
+    }
 
     @Test
-    fun recipesAndGroceryListsDoNotOverwriteEachOther() =
-        runTest {
-            RecipeStore(settings, RiseJson).save(recipe())
-            GroceryListStore(settings, RiseJson).save(GroceryList(id = "list-1"))
-            assertEquals(recipe(), RecipeStore(settings, RiseJson).get("recipe-1"))
-        }
+    fun recipesAndGroceryListsDoNotOverwriteEachOther() = runTest {
+        RecipeStore(settings, RiseJson).save(recipe())
+        GroceryListStore(settings, RiseJson).save(GroceryList(id = "list-1"))
+        assertEquals(recipe(), RecipeStore(settings, RiseJson).get("recipe-1"))
+    }
 }

@@ -40,7 +40,7 @@ internal class SettingsJsonStore<T>(
         val raw = settings.getStringOrNull(key) ?: return emptyList()
         return try {
             json.decodeFromString(listSerializer, raw)
-        } catch (e: SerializationException) {
+        } catch (ignored: SerializationException) {
             emptyList()
         }
     }

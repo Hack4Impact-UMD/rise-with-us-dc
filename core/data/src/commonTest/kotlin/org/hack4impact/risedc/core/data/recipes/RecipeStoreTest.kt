@@ -16,50 +16,44 @@ class RecipeStoreTest {
     private fun newStore() = RecipeStore(settings, RiseJson)
 
     @Test
-    fun emptyStoreHasNoRecipes() =
-        runTest {
-            assertTrue(newStore().observeAll().first().isEmpty())
-            assertNull(newStore().get("missing"))
-        }
+    fun emptyStoreHasNoRecipes() = runTest {
+        assertTrue(newStore().observeAll().first().isEmpty())
+        assertNull(newStore().get("missing"))
+    }
 
     @Test
-    fun savedRecipeCanBeRead() =
-        runTest {
-            val store = newStore()
-            store.save(recipe())
-            assertEquals(recipe(), store.get("recipe-1"))
-        }
+    fun savedRecipeCanBeRead() = runTest {
+        val store = newStore()
+        store.save(recipe())
+        assertEquals(recipe(), store.get("recipe-1"))
+    }
 
     @Test
-    fun manyRecipesAreAllKept() =
-        runTest {
-            val store = newStore()
-            listOf("r1", "r2", "r3").forEach { store.save(recipe(id = it)) }
-            assertEquals(listOf("r1", "r2", "r3"), store.observeAll().first().map { it.id })
-        }
+    fun manyRecipesAreAllKept() = runTest {
+        val store = newStore()
+        listOf("r1", "r2", "r3").forEach { store.save(recipe(id = it)) }
+        assertEquals(listOf("r1", "r2", "r3"), store.observeAll().first().map { it.id })
+    }
 
     @Test
-    fun savingSameIdReplacesInsteadOfDuplicating() =
-        runTest {
-            val store = newStore()
-            store.save(recipe())
-            val edited = recipe().copy(title = "Edited title")
-            store.save(edited)
-            assertEquals(listOf(edited), store.observeAll().first())
-        }
+    fun savingSameIdReplacesInsteadOfDuplicating() = runTest {
+        val store = newStore()
+        store.save(recipe())
+        val edited = recipe().copy(title = "Edited title")
+        store.save(edited)
+        assertEquals(listOf(edited), store.observeAll().first())
+    }
 
     @Test
-    fun recipesSurviveARelaunch() =
-        runTest {
-            // A new store on the same storage is what an app relaunch looks like.
-            newStore().save(recipe())
-            assertEquals(recipe(), newStore().get("recipe-1"))
-        }
+    fun recipesSurviveARelaunch() = runTest {
+        // A new store on the same storage is what an app relaunch looks like.
+        newStore().save(recipe())
+        assertEquals(recipe(), newStore().get("recipe-1"))
+    }
 
     @Test
-    fun unreadableSavedDataStartsEmpty() =
-        runTest {
-            settings.putString("recipes.v1", "not json")
-            assertTrue(newStore().observeAll().first().isEmpty())
-        }
+    fun unreadableSavedDataStartsEmpty() = runTest {
+        settings.putString("recipes.v1", "not json")
+        assertTrue(newStore().observeAll().first().isEmpty())
+    }
 }
