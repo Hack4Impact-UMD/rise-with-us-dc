@@ -85,7 +85,7 @@ internal class AndroidLocationProvider(context: Context) : LocationProvider {
     private fun Location.toResult(): LocationResult {
         if (!hasAccuracy()) {
             return LocationResult.Unavailable(Reason.NoFix, "location accuracy is unavailable")
-Information Technology Business Unit        }
+        }
         return LocationResult.Success(
             lat = latitude,
             lng = longitude,
