@@ -7,16 +7,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 
 /** Saves a list of items as one JSON string under [key]. Shared by recipes and grocery lists. */
 internal class SettingsJsonStore<T>(
     private val settings: Settings,
     private val key: String,
     private val json: Json,
-    serializer: KSerializer<T>,
+    private val serializer: KSerializer<T>,
     private val idOf: (T) -> String,
 ) : LocalStore<T> {
     private val listSerializer = ListSerializer(serializer)
@@ -35,13 +35,31 @@ internal class SettingsJsonStore<T>(
         }
     }
 
-    // Saved data that can't be read (for example after a model change) starts empty instead of crashing.
+    // Items that can't be read (for example after a model change) are skipped instead of crashing or
+    // hiding the rest. If anything is skipped, the original is kept under a backup key so save() can't destroy it.
     private fun load(): List<T> {
         val raw = settings.getStringOrNull(key) ?: return emptyList()
-        return try {
-            json.decodeFromString(listSerializer, raw)
-        } catch (ignored: SerializationException) {
-            emptyList()
-        }
+        val elements =
+            try {
+                json.parseToJsonElement(raw).jsonArray
+            } catch (ignored: IllegalArgumentException) {
+                null
+            }
+        val items =
+            elements.orEmpty().mapNotNull { element ->
+                try {
+                    json.decodeFromJsonElement(serializer, element)
+                } catch (ignored: IllegalArgumentException) {
+                    null
+                }
+            }
+        if (elements == null || items.size < elements.size) backUp(raw)
+        return items
+    }
+
+    // Keeps only the first unreadable copy: it is the one most likely to hold the user's real data.
+    private fun backUp(raw: String) {
+        val backupKey = "$key.unreadable"
+        if (settings.getStringOrNull(backupKey) == null) settings.putString(backupKey, raw)
     }
 }

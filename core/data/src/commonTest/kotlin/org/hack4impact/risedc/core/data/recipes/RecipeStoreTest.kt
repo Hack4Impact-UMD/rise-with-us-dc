@@ -52,8 +52,34 @@ class RecipeStoreTest {
     }
 
     @Test
-    fun unreadableSavedDataStartsEmpty() = runTest {
+    fun unreadableSavedDataStartsEmptyAndIsBackedUp() = runTest {
         settings.putString("recipes.v1", "not json")
         assertTrue(newStore().observeAll().first().isEmpty())
+        assertEquals("not json", settings.getStringOrNull("recipes.v1.unreadable"))
+    }
+
+    @Test
+    fun oneUnreadableRecipeDoesNotHideTheRest() = runTest {
+        newStore().save(recipe(id = "good"))
+        val good = settings.getString("recipes.v1", "").removePrefix("[").removeSuffix("]")
+        val raw = """[$good,{"id":"bad"}]"""
+        settings.putString("recipes.v1", raw)
+
+        assertEquals(listOf("good"), newStore().observeAll().first().map { it.id })
+        assertEquals(raw, settings.getStringOrNull("recipes.v1.unreadable"))
+    }
+
+    @Test
+    fun backupSurvivesTheNextSave() = runTest {
+        settings.putString("recipes.v1", "not json")
+        newStore().save(recipe())
+        assertEquals("not json", settings.getStringOrNull("recipes.v1.unreadable"))
+    }
+
+    @Test
+    fun readableDataIsNotBackedUp() = runTest {
+        newStore().save(recipe())
+        newStore()
+        assertNull(settings.getStringOrNull("recipes.v1.unreadable"))
     }
 }
