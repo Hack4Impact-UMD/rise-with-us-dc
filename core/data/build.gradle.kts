@@ -1,4 +1,5 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
 import java.util.Properties
 
 plugins {
@@ -48,4 +49,10 @@ buildkonfig {
     defaultConfigs { buildConfigField(STRING, "GEMINI_API_KEY", geminiApiKey) }
     // The web bundle is public, so it never carries the key (decision 0008).
     targetConfigs { create("wasmJs") { buildConfigField(STRING, "GEMINI_API_KEY", "") } }
+}
+
+// Standalone simulator launches can fail system certificate validation during live API tests.
+// Use -PiosSimulatorStandalone=false with --device <booted-UDID> for live testing.
+tasks.withType<KotlinNativeSimulatorTest>().configureEach {
+    standalone.set(providers.gradleProperty("iosSimulatorStandalone").map { it.toBooleanStrict() }.orElse(true))
 }
