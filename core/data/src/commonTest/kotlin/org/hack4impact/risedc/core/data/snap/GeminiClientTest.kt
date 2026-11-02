@@ -9,6 +9,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
@@ -16,6 +17,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.hack4impact.risedc.core.data.network.RiseJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 
@@ -35,6 +37,28 @@ class GeminiClientTest {
         )
         for ((status, body, expected) in cases) {
             withClient(status, body) { assertEquals(expected, it.generate(photo, policy)) }
+        }
+    }
+
+    @Test
+    fun unexpectedExceptionsBecomeFailuresButCancellationPropagates() = runTest {
+        val html = HttpClient(
+            MockEngine { respond("<html></html>", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "text/html")) },
+        ) {
+            install(ContentNegotiation) { json(RiseJson) }
+        }
+        val cancelled = HttpClient(MockEngine { throw CancellationException("cancelled") }) {
+            install(ContentNegotiation) { json(RiseJson) }
+        }
+        try {
+            assertEquals(
+                GeminiReply.Failure(FailureReason.INVALID_REPLY, true),
+                HttpGeminiClient(html, "test-key").generate(photo, policy),
+            )
+            assertFailsWith<CancellationException> { HttpGeminiClient(cancelled, "test-key").generate(photo, policy) }
+        } finally {
+            html.close()
+            cancelled.close()
         }
     }
 

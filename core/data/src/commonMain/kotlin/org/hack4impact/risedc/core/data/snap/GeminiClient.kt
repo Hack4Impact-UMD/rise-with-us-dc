@@ -10,9 +10,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import io.ktor.serialization.JsonConvertException
+import kotlinx.coroutines.CancellationException
 import kotlinx.io.IOException
-import kotlinx.serialization.SerializationException
 import org.hack4impact.risedc.core.data.network.RiseJson
 import kotlin.io.encoding.Base64
 
@@ -36,7 +35,7 @@ internal class HttpGeminiClient(
         // Encode the safety policy as JSON to send to the Gemini API
         val policyText = RiseJson.encodeToString(PolicyText(policy.neverUseIngredients, policy.allowedTools))
 
-        // Create a Part object for the image with inline data
+        // Create a part object for the image with inline data
         val image = Part(inlineData = InlineData(photo.mimeType, Base64.encode(photo.bytes)))
 
         // Send a POST request to the Gemini API with the system instruction, policy text, and image
@@ -80,11 +79,12 @@ internal class HttpGeminiClient(
             response.status.isSuccess() -> decode(response.body())
             else -> GeminiReply.Failure(FailureReason.REQUEST, retryable = false)
         }
+    } catch (e: CancellationException) {
+        throw e // The timeout in SnapAndCook relies on cancellation reaching it.
     } catch (_: IOException) {
         GeminiReply.Failure(FailureReason.NETWORK, retryable = true)
-    } catch (_: JsonConvertException) {
-        GeminiReply.Failure(FailureReason.INVALID_REPLY, retryable = true)
-    } catch (_: SerializationException) {
+    } catch (_: Exception) {
+        // Malformed JSON or an unreadable reply, such as a non-JSON content type.
         GeminiReply.Failure(FailureReason.INVALID_REPLY, retryable = true)
     }
 
