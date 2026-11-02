@@ -1,6 +1,10 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
+import java.util.Properties
+
 plugins {
     id("risedc.kmp.library")
     id("risedc.serialization")
+    id("risedc.buildkonfig")
 }
 
 kotlin {
@@ -15,6 +19,7 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.no.arg)
+            implementation(libs.kotlinx.datetime)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
@@ -29,7 +34,18 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
             implementation(libs.multiplatform.settings.test)
-            implementation(libs.kotlinx.coroutines.test)
         }
     }
+}
+
+// Gemini key: from local.properties (never committed) or the GEMINI_API_KEY env var in CI.
+val geminiApiKey: String = Properties()
+    .apply { rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load) }
+    .getProperty("GEMINI_API_KEY") ?: System.getenv("GEMINI_API_KEY") ?: ""
+
+buildkonfig {
+    packageName = "org.hack4impact.risedc.core.data"
+    defaultConfigs { buildConfigField(STRING, "GEMINI_API_KEY", geminiApiKey) }
+    // The web bundle is public, so it never carries the key (decision 0008).
+    targetConfigs { create("wasmJs") { buildConfigField(STRING, "GEMINI_API_KEY", "") } }
 }

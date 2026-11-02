@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.gradlePlugin.serialization)
     implementation(libs.gradlePlugin.ktlint)
     implementation(libs.gradlePlugin.detekt)
+    implementation(libs.gradlePlugin.buildkonfig)
     // Lets precompiled script plugins read the version catalog as `libs`.
     implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))
 }
