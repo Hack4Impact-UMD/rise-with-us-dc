@@ -17,7 +17,8 @@ internal actual suspend fun preparePhoto(bytes: ByteArray): PreparedPhoto? = wit
     // If the image can't be decoded then the width or height will be <= 0, so return null
     if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withContext null
 
-    // Downsample by a power of 2 to at most 2048px to save memory; the final resize below keeps the details while getting it 1024px.
+    // Downsample by a power of 2 to at most 2048px to save memory; the final resize below keeps
+    // the details while getting it 1024px.
     val options = BitmapFactory.Options().apply {
         inSampleSize = 1
         while (maxOf(bounds.outWidth, bounds.outHeight) / inSampleSize > MAX_IMAGE_SIDE * 2) inSampleSize *= 2
@@ -38,7 +39,7 @@ internal actual suspend fun preparePhoto(bytes: ByteArray): PreparedPhoto? = wit
     )
 
     try {
-        // Encode the resized bitmap as JPEG at 85% quality into output, without metadata. Returns null if encoding fails.
+        // Encode the resized bitmap as JPEG at 85% quality into output, without metadata.
         val output = ByteArrayOutputStream()
         if (!resized.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, output)) return@withContext null
         PreparedPhoto(output.toByteArray(), "image/jpeg")

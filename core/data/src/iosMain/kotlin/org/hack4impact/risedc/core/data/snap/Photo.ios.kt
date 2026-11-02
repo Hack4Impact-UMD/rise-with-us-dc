@@ -80,9 +80,9 @@ private fun createThumbnail(bytes: ByteArray): CGImageRef? {
                         CFDictionarySetValue(options, kCGImageSourceThumbnailMaxPixelSize, size)
                         CFDictionarySetValue(options, kCGImageSourceCreateThumbnailFromImageAlways, kCFBooleanTrue)
                         CFDictionarySetValue(options, kCGImageSourceCreateThumbnailWithTransform, kCFBooleanTrue)
-                        // Cache the thumbnail immediately since it needs to be used for JPEG encoding right after the function returns
+                        // Cache the thumbnail immediately since it needs to be used for JPEG encoding immeadiately
                         CFDictionarySetValue(options, kCGImageSourceShouldCacheImmediately, kCFBooleanTrue)
-                        // Create a thumbnail image from the source image using the specified options. Returns null if the thumbnail can't be created.
+                        // Create a thumbnail image from the source image using the specified options
                         CGImageSourceCreateThumbnailAtIndex(source, 0u, options)
                     }
                 }

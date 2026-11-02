@@ -89,7 +89,7 @@ internal class HttpGeminiClient(private val http: HttpClient, private val apiKey
         val candidate = response.candidates.firstOrNull()
             ?: return GeminiReply.Failure(FailureReason.BLOCKED, retryable = false)
 
-        // If the finish reason is not "STOP", the reply is invalid. If the finish reason is "MAX_TOKENS", the reply is retryable.
+        // Reject incomplete responses, only token-limit failures get another attempt.
         if (candidate.finishReason != "STOP") {
             return GeminiReply.Failure(FailureReason.INVALID_REPLY, retryable = candidate.finishReason == "MAX_TOKENS")
         }
