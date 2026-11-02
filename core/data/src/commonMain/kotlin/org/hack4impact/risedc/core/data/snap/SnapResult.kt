@@ -21,4 +21,12 @@ sealed interface SnapResult {
     data class Failed(val reason: FailureReason) : SnapResult
 }
 
-enum class FailureReason { NOT_CONFIGURED, NETWORK, REQUEST, RATE_LIMITED, INVALID_REPLY, BLOCKED }
+enum class FailureReason {
+    NOT_CONFIGURED,
+    NETWORK,
+    SERVICE_UNAVAILABLE,
+    REQUEST,
+    RATE_LIMITED,
+    INVALID_REPLY,
+    BLOCKED,
+}

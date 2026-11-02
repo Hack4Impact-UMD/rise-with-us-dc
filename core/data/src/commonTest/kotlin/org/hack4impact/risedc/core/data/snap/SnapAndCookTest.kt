@@ -175,6 +175,15 @@ class SnapAndCookTest {
     }
 
     @Test
+    fun oversizedRepliesDoNotBypassLocalChecks() = runTest {
+        val invalid = recipe.copy(minutes = 16)
+        val oversized = service(budget()) {
+            GeminiReply.Success(GeneratedReply(true, listOf(recipe, recipe, recipe, invalid)))
+        }.recipesFrom(byteArrayOf())
+        assertEquals(SnapResult.Failed(FailureReason.INVALID_REPLY), oversized)
+    }
+
+    @Test
     fun deadlineAndCancellationDoNotBecomeGenericFailures() = runTest {
         val result = service(budget()) {
             kotlinx.coroutines.delay(31_000)

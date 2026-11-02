@@ -6,12 +6,17 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.hack4impact.risedc.core.data.network.RiseJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 
 class GeminiClientTest {
@@ -20,7 +25,11 @@ class GeminiClientTest {
         val cases = listOf(
             Triple(HttpStatusCode.BadRequest, "{}", GeminiReply.Failure(FailureReason.REQUEST, false)),
             Triple(HttpStatusCode.TooManyRequests, "{}", GeminiReply.Failure(FailureReason.RATE_LIMITED, false)),
-            Triple(HttpStatusCode.ServiceUnavailable, "{}", GeminiReply.Failure(FailureReason.NETWORK, true)),
+            Triple(
+                HttpStatusCode.ServiceUnavailable,
+                "{}",
+                GeminiReply.Failure(FailureReason.SERVICE_UNAVAILABLE, true),
+            ),
             Triple(HttpStatusCode.OK, "not json", GeminiReply.Failure(FailureReason.INVALID_REPLY, true)),
             Triple(HttpStatusCode.OK, "{}", GeminiReply.Failure(FailureReason.BLOCKED, false)),
         )
@@ -41,6 +50,41 @@ class GeminiClientTest {
         )
         withClient(HttpStatusCode.OK, RiseJson.encodeToString(complete)) {
             assertEquals(reply, assertIs<GeminiReply.Success>(it.generate(photo, policy)).reply)
+        }
+    }
+
+    @Test
+    fun requestUsesLowThinkingWithoutDeprecatedSamplingOrNestedBounds() = runTest {
+        val http = HttpClient(
+            MockEngine { request ->
+                assertEquals("/v1beta/models/gemini-3.5-flash:generateContent", request.url.encodedPath)
+                val body = (request.body as OutgoingContent.ByteArrayContent).bytes().decodeToString()
+                val config = RiseJson.parseToJsonElement(body).jsonObject.getValue("generationConfig").jsonObject
+                assertFalse("temperature" in config)
+                assertEquals(
+                    "LOW",
+                    config.getValue("thinkingConfig").jsonObject.getValue("thinkingLevel").jsonPrimitive.content,
+                )
+                assertEquals("4096", config.getValue("maxOutputTokens").jsonPrimitive.content)
+                val schema = config.getValue("responseSchema").jsonObject
+                val recipes = schema.getValue("properties").jsonObject.getValue("recipes").jsonObject
+                assertEquals("3", recipes.getValue("maxItems").jsonPrimitive.content)
+                val nestedSchema = recipes.getValue("items").toString()
+                for (constraint in listOf("maxItems", "minItems", "maximum", "minimum", "maxLength")) {
+                    assertFalse(JsonPrimitive(constraint).toString() in nestedSchema)
+                }
+                respond("{}", HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, "application/json"))
+            },
+        ) {
+            install(ContentNegotiation) { json(RiseJson) }
+        }
+        try {
+            assertEquals(
+                GeminiReply.Failure(FailureReason.REQUEST, false),
+                HttpGeminiClient(http, "test-key").generate(photo, policy),
+            )
+        } finally {
+            http.close()
         }
     }
 

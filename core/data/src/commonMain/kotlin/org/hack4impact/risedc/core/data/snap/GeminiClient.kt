@@ -26,7 +26,11 @@ internal fun interface GeminiClient {
     suspend fun generate(photo: PreparedPhoto, policy: SafetyPolicy): GeminiReply
 }
 
-internal class HttpGeminiClient(private val http: HttpClient, private val apiKey: String) : GeminiClient {
+internal class HttpGeminiClient(
+    private val http: HttpClient,
+    private val apiKey: String,
+    private val model: String = "gemini-3.5-flash",
+) : GeminiClient {
 
     override suspend fun generate(photo: PreparedPhoto, policy: SafetyPolicy): GeminiReply = try {
         // Encode the safety policy as JSON to send to the Gemini API
@@ -36,7 +40,7 @@ internal class HttpGeminiClient(private val http: HttpClient, private val apiKey
         val image = Part(inlineData = InlineData(photo.mimeType, Base64.encode(photo.bytes)))
 
         // Send a POST request to the Gemini API with the system instruction, policy text, and image
-        val response = http.post(URL) {
+        val response = http.post("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent") {
             expectSuccess = false
             header("x-goog-api-key", apiKey)
             contentType(ContentType.Application.Json)
@@ -52,7 +56,8 @@ internal class HttpGeminiClient(private val http: HttpClient, private val apiKey
                     generationConfig = GenerationConfig(
                         responseMimeType = "application/json",
                         responseSchema = SnapPrompt.RESPONSE_SCHEMA,
-                        temperature = 0.4,
+                        thinkingConfig = ThinkingConfig(thinkingLevel = "LOW"),
+                        maxOutputTokens = MAX_OUTPUT_TOKENS,
                     ),
                 ),
             )
@@ -67,7 +72,7 @@ internal class HttpGeminiClient(private val http: HttpClient, private val apiKey
 
             // Retryable since an internal server error could be a temporary issue with the Gemini API
             response.status.value >= HttpStatusCode.InternalServerError.value -> GeminiReply.Failure(
-                FailureReason.NETWORK,
+                FailureReason.SERVICE_UNAVAILABLE,
                 retryable = true,
             )
 
@@ -104,8 +109,7 @@ internal class HttpGeminiClient(private val http: HttpClient, private val apiKey
     @kotlinx.serialization.Serializable
     private data class PolicyText(val neverUseIngredients: Set<String>, val allowedTools: Set<String>)
 
-    // URL for the Gemini API endpoint to generate the reply
     private companion object {
-        const val URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+        const val MAX_OUTPUT_TOKENS = 4096
     }
 }

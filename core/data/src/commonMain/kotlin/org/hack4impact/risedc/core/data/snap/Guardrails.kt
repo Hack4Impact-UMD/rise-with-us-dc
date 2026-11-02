@@ -54,6 +54,7 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
             step.instruction.isNotBlank() &&
             step.instruction.length <= SnapPrompt.MAX_INSTRUCTION_LENGTH &&
             step.photo == null &&
+            step.safety.size <= SnapPrompt.SAFETY_TAGS.size &&
             step.safety.all { it in SnapPrompt.SAFETY_TAGS } &&
             (!heat.containsMatchIn(text) || "HOT" in step.safety) &&
             (!sharp.containsMatchIn(text) || "SHARP" in step.safety) &&

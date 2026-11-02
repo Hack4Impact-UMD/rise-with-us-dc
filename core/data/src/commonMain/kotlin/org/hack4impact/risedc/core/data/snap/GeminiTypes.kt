@@ -30,8 +30,12 @@ internal data class InlineData(val mimeType: String, val data: String)
 internal data class GenerationConfig(
     val responseMimeType: String,
     val responseSchema: JsonObject,
-    val temperature: Double,
+    val thinkingConfig: ThinkingConfig,
+    val maxOutputTokens: Int,
 )
+
+@Serializable
+internal data class ThinkingConfig(val thinkingLevel: String)
 
 /* Gemini can return multiple options of responses to one request, so each candidate
     represents one potential response. For now use the default of setting one candidate per request */

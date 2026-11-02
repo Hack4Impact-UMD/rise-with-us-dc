@@ -40,7 +40,7 @@ internal class GeminiSnapAndCook(
 
     @Suppress("ReturnCount") // Each terminal outcome exits the bounded retry loop.
     private suspend fun generate(photo: PreparedPhoto, policy: SafetyPolicy): SnapResult {
-        // failure is initialized to INVALID_REPLY incase the Gemini API returns a retryable failure on both attempts
+        val validator = RecipeValidator(policy)
         var failure = FailureReason.INVALID_REPLY
 
         // retry if the first call fails, with a delay between calls
@@ -65,9 +65,14 @@ internal class GeminiSnapAndCook(
                     // return BadPhoto if no food is found and no recipes are returned
                     if (!reply.foodFound && reply.recipes.isEmpty()) return SnapResult.BadPhoto
 
-                    // filter the recipes through the safety policy and check if there's a valid amount of safe recipes
-                    val safe = reply.recipes.filter(RecipeValidator(policy)::accepts)
-                    if (reply.foodFound && safe.size in SnapPrompt.MIN_RECIPES..SnapPrompt.MAX_RECIPES) {
+                    if (!reply.foodFound || reply.recipes.size !in SnapPrompt.MIN_RECIPES..SnapPrompt.MAX_RECIPES) {
+                        failure = FailureReason.INVALID_REPLY
+                        return@repeat
+                    }
+
+                    // Filter through the policy after validating the response envelope.
+                    val safe = reply.recipes.filter(validator::accepts)
+                    if (safe.size >= SnapPrompt.MIN_RECIPES) {
                         return SnapResult.Recipes(safe.map { it.toRecipe() })
                     }
                     failure = FailureReason.INVALID_REPLY
