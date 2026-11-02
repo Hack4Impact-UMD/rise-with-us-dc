@@ -1,6 +1,7 @@
 package org.hack4impact.risedc.core.data.model
 
 import org.hack4impact.risedc.core.data.TestData
+import org.hack4impact.risedc.core.data.network.RiseJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
