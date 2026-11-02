@@ -26,7 +26,7 @@ internal object SnapPrompt {
     val SYSTEM_INSTRUCTION = """
         Return exactly $MIN_RECIPES complete recipes using ingredients visible in this photo, not a single recipe.
         Use at most $MAX_STEPS steps, $MAX_MINUTES minutes, $MAX_INGREDIENTS ingredients and $MAX_UTENSILS utensils.
-        Keep titles within $MAX_TITLE_LENGTH characters, ingredient/tool names within $MAX_NAME_LENGTH,
+        Keep titles within $MAX_TITLE_LENGTH characters, ingredient names within $MAX_NAME_LENGTH,
         amounts within $MAX_AMOUNT_LENGTH, step labels within $MAX_LABEL_LENGTH and instructions within $MAX_INSTRUCTION_LENGTH.
         Never use raw meat, fish or eggs.
         Never use anything in the supplied neverUseIngredients list. Use only the exact tool names

@@ -3,7 +3,8 @@ package org.hack4impact.risedc.core.data.snap
 import org.hack4impact.risedc.core.data.model.Ingredient
 import org.hack4impact.risedc.core.data.model.RecipeStep
 
-/** RISE org wide never-use ingredients and allowed tools. */
+/** Org wide safety policy which defines what ingredients the recipes should not include
+ and what tools are allowed for the apps users */
 data class SafetyPolicy(val neverUseIngredients: Set<String>, val allowedTools: Set<String>) {
     init {
         require(neverUseIngredients.none { it.isBlank() })
@@ -11,7 +12,7 @@ data class SafetyPolicy(val neverUseIngredients: Set<String>, val allowedTools: 
     }
 }
 
-/** Structural/policy checks plus conservative English hazard checks, not a food-safety guarantee. */
+/** Validates the recipes provided by Gemini follow the orgs defines safety policy */
 internal class RecipeValidator(private val policy: SafetyPolicy) {
     private val heat = Regex(
         "\\b(microwav|toast|(pre|re)?heat|warm|hot|boil|broil|melt|steam|bak|fry|stir-fr|" +
@@ -31,6 +32,7 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
             "\\b(ceviche|(steak|beef|tuna|salmon) tartare)\\b",
     )
     private val neverUse = policy.neverUseIngredients.map { Regex("\\b${Regex.escape(it.trim().lowercase())}") }
+    private val allowedTools = policy.allowedTools.map { it.trim().lowercase() }.toSet()
 
     fun accepts(recipe: GeneratedRecipe): Boolean = recipe.title.isNotBlank() &&
         recipe.title.length <= SnapPrompt.MAX_TITLE_LENGTH &&
@@ -39,7 +41,7 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
         recipe.ingredients.size in 1..SnapPrompt.MAX_INGREDIENTS &&
         recipe.ingredients.all(::acceptsIngredient) &&
         recipe.utensils.size in 1..SnapPrompt.MAX_UTENSILS &&
-        recipe.utensils.all { it in policy.allowedTools && it.length <= SnapPrompt.MAX_NAME_LENGTH } &&
+        recipe.utensils.all { it.trim().lowercase() in allowedTools } &&
         recipe.steps.size in 1..SnapPrompt.MAX_STEPS &&
         recipe.steps.all(::acceptsStep)
 
@@ -68,6 +70,6 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
             step.safety.all { it in SnapPrompt.SAFETY_TAGS } &&
             (!heat.containsMatchIn(text) || "HOT" in step.safety) &&
             (!sharp.containsMatchIn(text) || "SHARP" in step.safety) &&
-            restrictedTools.findAll(text).all { it.value in policy.allowedTools }
+            restrictedTools.findAll(text).all { it.value in allowedTools }
     }
 }

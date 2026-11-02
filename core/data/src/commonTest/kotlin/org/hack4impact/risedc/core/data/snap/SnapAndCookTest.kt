@@ -181,6 +181,15 @@ class SnapAndCookTest {
     }
 
     @Test
+    fun allowedToolsIgnoreCase() {
+        val validator = RecipeValidator(policy.copy(allowedTools = setOf("Spoon", "Oven")))
+        val ovenStep = RecipeStep("Bake", "Bake in the oven.", safety = listOf("HOT"))
+        assertTrue(validator.accepts(recipe.copy(utensils = listOf("spoon"), steps = listOf(ovenStep))))
+        assertTrue(validator.accepts(recipe.copy(utensils = listOf("SPOON"))))
+        assertFalse(validator.accepts(recipe.copy(utensils = listOf("fork"))))
+    }
+
+    @Test
     fun shortLabelsAreLimitedByLengthNotWordCount() {
         val validator = RecipeValidator(policy)
         val instruction = "Mix the beans."
