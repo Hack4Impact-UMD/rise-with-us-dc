@@ -106,12 +106,30 @@ class SnapAndCookTest {
             "raw free-range chicken",
             "raw wild caught salmon",
             "raw carrots and chicken",
+            "raw duck",
+            "raw poultry",
+            "raw seafood",
+            "raw shellfish",
+            "raw squid",
+            "raw sardines",
+            "raw trout",
+            "raw liver",
+            "raw ribs",
+            "raw hamburger",
+            "raw meatballs",
+            "ceviche",
         )
         rejected.forEach { name ->
             assertFalse(validator.accepts(recipe.copy(ingredients = listOf(ingredient.copy(name = name)))), name)
         }
         assertFalse(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Add meat", "Add the uncooked shrimp.")))))
-        val allowed = listOf("raw eggplant", "raw carrots", "raw hamburger buns", "raw carrots, cooked chicken")
+        val allowed = listOf(
+            "raw eggplant",
+            "raw carrots",
+            "raw hamburger buns",
+            "raw carrots, cooked chicken",
+            "tartare sauce",
+        )
         allowed.forEach { name ->
             assertTrue(validator.accepts(recipe.copy(ingredients = listOf(ingredient.copy(name = name)))), name)
         }

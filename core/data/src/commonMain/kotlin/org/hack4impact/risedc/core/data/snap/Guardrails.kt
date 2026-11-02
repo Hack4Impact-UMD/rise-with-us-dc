@@ -26,7 +26,9 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
     private val rawFood = Regex(
         "\\b(raw|uncooked|undercooked)\\s+([a-z-]+\\s+){0,2}(meats?|chicken|beef|pork|turkey|lamb|veal|ham|bacon|" +
             "sausages?|steaks?|fish|salmon|tuna|cod|tilapia|shrimp|prawns?|crabs?|lobsters?|clams?|mussels?|" +
-            "oysters?|scallops?|eggs?)\\b",
+            "oysters?|scallops?|eggs?|ducks?|venison|poultry|seafood|shellfish|squids?|sardines?|trout|livers?|" +
+            "ribs?|hamburgers?(?! buns?)|meatballs?)\\b|" +
+            "\\b(ceviche|(steak|beef|tuna|salmon) tartare)\\b",
     )
     private val neverUse = policy.neverUseIngredients.map { Regex("\\b${Regex.escape(it.trim().lowercase())}") }
 
