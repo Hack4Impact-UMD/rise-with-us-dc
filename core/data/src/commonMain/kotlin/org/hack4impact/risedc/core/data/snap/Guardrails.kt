@@ -13,13 +13,21 @@ data class SafetyPolicy(val neverUseIngredients: Set<String>, val allowedTools: 
 
 /** Structural/policy checks plus conservative English hazard checks, not a food-safety guarantee. */
 internal class RecipeValidator(private val policy: SafetyPolicy) {
-    private val heat = Regex("\\b(microwav|toast|heat|warm|hot|boil|broil|melt|steam|bak|fry|grill)[a-z]*")
+    private val heat = Regex(
+        "\\b(microwav|toast|(pre|re)?heat|warm|hot|boil|broil|melt|steam|bak|fry|stir-fr|" +
+            "grill|cook(?!ie|book)|simmer|roast|sear(?!ch)|poach|saut|brais|stew|scald|sizzl|" +
+            "oven|stove|burner|skillet)[a-z]*",
+    )
     private val sharp = Regex(
         "\\b(knife|knives|cut|slic|chop|dic|minc|peel|grate|shred|" +
             "can opener|open(ing)?( (the|a))? (cans?|canned)\\b)[a-z]*",
     )
     private val restrictedTools = Regex("\\b(stove|stovetop|oven|skillet|grill)\\b")
-    private val rawFood = Regex("\\braw\\s+(meat|chicken|beef|pork|turkey|lamb|fish|salmon|tuna|shrimp|egg)")
+    private val rawFood = Regex(
+        "\\b(raw|uncooked|undercooked)\\s+([a-z-]+\\s+){0,2}(meats?|chicken|beef|pork|turkey|lamb|veal|ham|bacon|" +
+            "sausages?|steaks?|fish|salmon|tuna|cod|tilapia|shrimp|prawns?|crabs?|lobsters?|clams?|mussels?|" +
+            "oysters?|scallops?|eggs?)\\b",
+    )
     private val neverUse = policy.neverUseIngredients.map { Regex("\\b${Regex.escape(it.trim().lowercase())}") }
 
     fun accepts(recipe: GeneratedRecipe): Boolean = recipe.title.isNotBlank() &&
@@ -38,7 +46,7 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
             recipe.ingredients.map { it.name } +
                 recipe.steps.flatMap { listOf(it.shortLabel, it.instruction) } +
                 recipe.title
-            ).joinToString(" ").lowercase()
+            ).joinToString(". ").lowercase() // Keeps separate fields from matching as one phrase.
         return rawFood.containsMatchIn(text) || neverUse.any { it.containsMatchIn(text) }
     }
 

@@ -94,6 +94,32 @@ class SnapAndCookTest {
     }
 
     @Test
+    fun rawMeatFishAndEggsAreRejectedWithoutFlaggingOtherFood() {
+        val validator = RecipeValidator(policy)
+        val ingredient = recipe.ingredients.single()
+        val rejected = listOf(
+            "uncooked chicken",
+            "undercooked beef",
+            "raw whole egg",
+            "Raw Eggs",
+            "raw ground beef",
+            "raw free-range chicken",
+            "raw wild caught salmon",
+            "raw carrots and chicken",
+        )
+        rejected.forEach { name ->
+            assertFalse(validator.accepts(recipe.copy(ingredients = listOf(ingredient.copy(name = name)))), name)
+        }
+        assertFalse(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Add meat", "Add the uncooked shrimp.")))))
+        val allowed = listOf("raw eggplant", "raw carrots", "raw hamburger buns", "raw carrots, cooked chicken")
+        allowed.forEach { name ->
+            assertTrue(validator.accepts(recipe.copy(ingredients = listOf(ingredient.copy(name = name)))), name)
+        }
+        val separateFields = listOf(ingredient.copy(name = "raw carrots"), ingredient.copy(name = "cooked chicken"))
+        assertTrue(validator.accepts(recipe.copy(ingredients = separateFields)))
+    }
+
+    @Test
     fun neverUseIngredientsAreRejectedAndOtherFoodIsAllowed() {
         val validator = RecipeValidator(policy)
         val ingredient = recipe.ingredients.single()
@@ -142,6 +168,27 @@ class SnapAndCookTest {
         val instruction = "Mix the beans."
         assertTrue(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Add the canned beans", instruction)))))
         assertFalse(validator.accepts(recipe.copy(steps = listOf(RecipeStep("a".repeat(26), instruction)))))
+    }
+
+    @Test
+    fun heatWordsRequireHotTagWithoutFlaggingLookalikes() {
+        val tools = setOf("spoon", "oven", "stove", "skillet", "grill")
+        val validator = RecipeValidator(policy.copy(allowedTools = tools))
+        val heatSteps = listOf(
+            "Cook the beans.", "Simmer the beans.", "Roast the beans.", "Sear the beans.", "Poach the beans.",
+            "Saute the beans.", "Sauté the beans.", "Reheat the beans.", "Preheat the oven.", "Fry the beans.",
+            "Stir-fry the beans.", "Stir-fried beans.", "Braise the beans.", "Stew the beans.", "Scald the milk.",
+            "Put the pan on the burner.", "Use the stove.", "Warm the skillet.",
+        )
+        heatSteps.forEach { instruction ->
+            val step = RecipeStep("Next", instruction)
+            assertFalse(validator.accepts(recipe.copy(steps = listOf(step))), instruction)
+            assertTrue(validator.accepts(recipe.copy(steps = listOf(step.copy(safety = listOf("HOT"))))), instruction)
+        }
+        val coldSteps = listOf("Add the cookies.", "Follow the cookbook.", "Search the pantry.", "Add the chard.")
+        coldSteps.forEach { instruction ->
+            assertTrue(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Next", instruction)))), instruction)
+        }
     }
 
     @Test
