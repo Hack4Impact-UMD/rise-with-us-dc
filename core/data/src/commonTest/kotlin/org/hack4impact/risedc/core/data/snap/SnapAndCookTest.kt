@@ -63,6 +63,15 @@ class SnapAndCookTest {
     }
 
     @Test
+    fun corruptUsageRecordResetsTheDailyAllowance() = runTest {
+        val settings = MapSettings()
+        settings.putString("snap.dailyCallUsage", "not json")
+        val budget = GenerationBudget(settings) { LocalDate(2026, 10, 26) }
+        repeat(50) { assertTrue(budget.reserve()) }
+        assertFalse(budget.reserve())
+    }
+
+    @Test
     fun returnsValidatedRecipesWithGeneratedSteps() = runTest {
         val result = service(budget()) {
             GeminiReply.Success(GeneratedReply(true, listOf(recipe, recipe)))

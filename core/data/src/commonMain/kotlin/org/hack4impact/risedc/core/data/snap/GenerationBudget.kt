@@ -16,7 +16,7 @@ internal class GenerationBudget(
     private val settings: Settings,
     private val today: () -> LocalDate = { Clock.System.todayIn(TimeZone.of("America/New_York")) },
 ) {
-    /** Persists one reservation before sending a request. False if capped or stored data is invalid. */
+    /** Persists one reservation before sending a request. False if capped; invalid stored data counts as 0 used. */
     suspend fun reserve(): Boolean = lock.withLock {
         val date = today().toString()
         val saved = settings.getStringOrNull(KEY)?.let { storedJson ->
@@ -24,7 +24,8 @@ internal class GenerationBudget(
                 // Decode the stored JSON into a DailyCallUsage object
                 RiseJson.decodeFromString<DailyCallUsage>(storedJson)
             } catch (_: SerializationException) {
-                return@withLock false
+                // Corrupt data must not lock people out of generation, so start the count over
+                null
             }
         }
 
