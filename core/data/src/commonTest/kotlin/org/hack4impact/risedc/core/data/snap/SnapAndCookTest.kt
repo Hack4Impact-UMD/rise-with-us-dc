@@ -240,11 +240,39 @@ class SnapAndCookTest {
     }
 
     @Test
+    fun oneSafeRecipeIsReturnedWithoutRetrying() = runTest {
+        val invalid = recipe.copy(minutes = 16)
+        for (reply in listOf(listOf(recipe), listOf(recipe, invalid))) {
+            var requests = 0
+            val result = service(budget()) {
+                requests++
+                GeminiReply.Success(GeneratedReply(true, reply))
+            }.recipesFrom(byteArrayOf())
+            assertEquals(1, assertIs<SnapResult.Recipes>(result).recipes.size)
+            assertEquals(1, requests)
+        }
+    }
+
+    @Test
+    fun foodWithNoSafeRecipesRetriesThenFails() = runTest {
+        val invalid = recipe.copy(minutes = 16)
+        for (reply in listOf(emptyList(), listOf(invalid, invalid))) {
+            var requests = 0
+            val result = service(budget()) {
+                requests++
+                GeminiReply.Success(GeneratedReply(true, reply))
+            }.recipesFrom(byteArrayOf())
+            assertEquals(SnapResult.Failed(FailureReason.INVALID_REPLY), result)
+            assertEquals(2, requests)
+        }
+    }
+
+    @Test
     fun invalidReplyRetriesButPermanentErrorsDoNot() = runTest {
         var requests = 0
         val result = service(budget()) {
             requests++
-            GeminiReply.Success(GeneratedReply(true, listOf(recipe)))
+            GeminiReply.Success(GeneratedReply(true, listOf(recipe.copy(minutes = 16))))
         }.recipesFrom(byteArrayOf())
         assertEquals(SnapResult.Failed(FailureReason.INVALID_REPLY), result)
         assertEquals(2, requests)

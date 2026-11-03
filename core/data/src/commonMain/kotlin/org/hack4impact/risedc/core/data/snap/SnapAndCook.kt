@@ -65,14 +65,16 @@ internal class GeminiSnapAndCook(
                     // return BadPhoto if no food is found and no recipes are returned
                     if (!reply.foodFound && reply.recipes.isEmpty()) return SnapResult.BadPhoto
 
-                    if (!reply.foodFound || reply.recipes.size !in SnapPrompt.MIN_RECIPES..SnapPrompt.MAX_RECIPES) {
+                    if (!reply.foodFound || reply.recipes.size > SnapPrompt.MAX_RECIPES) {
                         failure = FailureReason.INVALID_REPLY
                         return@repeat
                     }
 
                     // Filter through the policy after validating the response envelope.
                     val safe = reply.recipes.filter(validator::accepts)
-                    if (safe.size >= SnapPrompt.MIN_RECIPES) {
+
+                    // Even one safe recipe is better than showing nothing, so don't spend a retry on more.
+                    if (safe.isNotEmpty()) {
                         return SnapResult.Recipes(safe.map { it.toRecipe() })
                     }
                     failure = FailureReason.INVALID_REPLY
