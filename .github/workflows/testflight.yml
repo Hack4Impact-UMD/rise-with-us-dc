@@ -14,7 +14,7 @@ on:
       - "*.gradle.kts"
       - gradle.properties
       - .github/workflows/testflight.yml
-      - .github/scripts/testflight-notes.swift
+      - .github/scripts/testflight-notes.mjs
 
 # A newer push to the same PR replaces the build in progress.
 concurrency:
@@ -33,13 +33,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - app: Recipes
-            bundle_id: org.hack4impact.risedc.recipes
-          - app: Transit
-            bundle_id: org.hack4impact.risedc.transit
+        app: [Recipes, Transit]
+    # The build number each app uploaded, e.g. {Recipes: "42.1"}. Matrix outputs merge across legs.
+    outputs:
+      Recipes: ${{ steps.upload.outputs.Recipes }}
+      Transit: ${{ steps.upload.outputs.Transit }}
     env:
-      # Unique and increasing for every run and re-run, e.g. 42.1
+      # Unique for every run and re-run, e.g. 42.1. Not ordered across PRs: re-running an old run uploads 40.2 after 42.1.
       BUILD_NUMBER: ${{ github.run_number }}.${{ github.run_attempt }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -63,12 +63,12 @@ jobs:
             echo "::error::Missing ASC_KEY_P8 / ASC_KEY_ID / ASC_ISSUER_ID secrets or APPLE_TEAM_ID variable"
             exit 1
           fi
+          ASC_KEY_PATH="$RUNNER_TEMP/AuthKey-${{ matrix.app }}.p8"
           {
             echo "ARCHIVE_PATH=$RUNNER_TEMP/${{ matrix.app }}.xcarchive"
             echo "EXPORT_PATH=$RUNNER_TEMP/${{ matrix.app }}-export"
-            echo "ASC_KEY_PATH=$RUNNER_TEMP/AuthKey-${{ matrix.app }}.p8"
+            echo "ASC_KEY_PATH=$ASC_KEY_PATH"
           } >> "$GITHUB_ENV"
-          ASC_KEY_PATH="$RUNNER_TEMP/AuthKey-${{ matrix.app }}.p8"
           umask 077
           printf '%s\n' "$ASC_KEY_P8" > "$ASC_KEY_PATH"
 
@@ -87,6 +87,7 @@ jobs:
           CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
 
       - name: Upload to TestFlight
+        id: upload
         run: |
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
@@ -111,26 +112,9 @@ jobs:
             -authenticationKeyPath "$ASC_KEY_PATH" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
-
-      - name: Set "What to Test"
-        # Upload already succeeded; a failure here only means the note is missing.
-        continue-on-error: true
-        env:
-          BUNDLE_ID: ${{ matrix.bundle_id }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          WHATS_NEW="$(printf 'PR #%s: %s\nBranch: %s (%s)\nBy: %s\n%s' \
-            "$PR_NUMBER" "$PR_TITLE" "$PR_BRANCH" "${HEAD_SHA:0:7}" "$PR_AUTHOR" "$PR_URL")"
-          export WHATS_NEW
-          xcrun swift .github/scripts/testflight-notes.swift
+          echo "${{ matrix.app }}=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
 
       - name: Summary
-        if: success()
         run: |
           VERSION=$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' "$ARCHIVE_PATH/Info.plist")
           echo "**${{ matrix.app }}** $VERSION ($BUILD_NUMBER) uploaded to TestFlight. It shows up in the TestFlight app once Apple finishes processing (usually 5–15 min)." >> "$GITHUB_STEP_SUMMARY"
@@ -138,3 +122,47 @@ jobs:
       - name: Clean up
         if: always()
         run: rm -rf "$ASC_KEY_PATH" "$ARCHIVE_PATH" "$EXPORT_PATH" "$RUNNER_TEMP/ExportOptions.plist"
+
+  notes:
+    # Waits for Apple to process each upload, then sets its "What to Test" note.
+    # On a GitHub-hosted runner so the Mac mini isn't held while Apple processes.
+    # Still runs when one app's upload failed, so the other app gets its note.
+    needs: upload
+    if: ${{ !cancelled() && needs.upload.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [Recipes, Transit]
+    env:
+      BUILD_NUMBER: ${{ needs.upload.outputs[matrix.app] }}
+    steps:
+      - uses: actions/checkout@v5
+        if: env.BUILD_NUMBER != ''
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: |
+            .github/scripts
+            iosApp/${{ matrix.app }}/Configuration
+
+      - name: Set "What to Test"
+        if: env.BUILD_NUMBER != ''
+        # Upload already succeeded; a failure here only means the note is missing.
+        continue-on-error: true
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          BUNDLE_ID=$(sed -n 's/^PRODUCT_BUNDLE_IDENTIFIER *= *//p' "iosApp/${{ matrix.app }}/Configuration/Config.xcconfig")
+          WHATS_NEW="$(printf 'PR #%s: %s\nBranch: %s (%s)\nBy: %s\n%s' \
+            "$PR_NUMBER" "$PR_TITLE" "$PR_BRANCH" "${HEAD_SHA:0:7}" "$PR_AUTHOR" "$PR_URL")"
+          export BUNDLE_ID WHATS_NEW
+          node .github/scripts/testflight-notes.mjs
