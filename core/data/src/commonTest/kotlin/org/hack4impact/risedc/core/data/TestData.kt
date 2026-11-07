@@ -1,6 +1,5 @@
 package org.hack4impact.risedc.core.data
 
-import kotlinx.serialization.json.Json
 import org.hack4impact.risedc.core.data.model.GroceryItem
 import org.hack4impact.risedc.core.data.model.Ingredient
 import org.hack4impact.risedc.core.data.model.MealType
@@ -11,8 +10,6 @@ import org.hack4impact.risedc.core.data.model.RecipeStep
 import org.hack4impact.risedc.core.data.model.StoreSection
 
 internal object TestData {
-    val json = Json { ignoreUnknownKeys = true }
-
     fun ingredient(name: String, amount: String = "1 cup", section: StoreSection = StoreSection.PANTRY) =
         Ingredient(name = name, amount = amount, storeSection = section)
 

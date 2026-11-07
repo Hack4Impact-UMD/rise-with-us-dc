@@ -7,5 +7,11 @@ interface LocalStore<T> {
 
     suspend fun get(id: String): T?
 
+    /** Adds [item], or replaces the item with the same id in place. */
     suspend fun save(item: T)
+
+    /** Changes the item with [id] in one step, so concurrent edits can't overwrite each other. Null if missing. */
+    suspend fun update(id: String, transform: (T) -> T): T?
+
+    suspend fun delete(id: String)
 }

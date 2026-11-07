@@ -1,14 +1,21 @@
 package org.hack4impact.risedc.core.data.storage
 
 import com.russhwolf.settings.Settings
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 
 /** Saves a list of items as one JSON string under [key]. Shared by recipes and grocery lists. */
@@ -19,47 +26,88 @@ internal class SettingsJsonStore<T>(
     private val serializer: KSerializer<T>,
     private val idOf: (T) -> String,
 ) : LocalStore<T> {
-    private val listSerializer = ListSerializer(serializer)
     private val mutex = Mutex()
-    private val state = MutableStateFlow(load())
+    private val state = MutableStateFlow<List<T>>(emptyList())
+    private var loaded = false
 
-    override fun observeAll(): StateFlow<List<T>> = state.asStateFlow()
+    // Saved entries this version can't read (for example after a model change). They are written back
+    // untouched on every save, so a later version that can read them gets them back.
+    private var unreadable: List<JsonElement> = emptyList()
 
-    override suspend fun get(id: String): T? = state.value.find { idOf(it) == id }
-
-    override suspend fun save(item: T) {
-        mutex.withLock {
-            val updated = state.value.filterNot { idOf(it) == idOf(item) } + item
-            settings.putString(key, json.encodeToString(listSerializer, updated))
-            state.value = updated
-        }
+    override fun observeAll(): Flow<List<T>> = flow {
+        mutex.withLock { loadIfNeeded() }
+        emitAll(state)
     }
 
-    // Items that can't be read (for example after a model change) are skipped instead of crashing or
-    // hiding the rest. If anything is skipped, the original is kept under a backup key so save() can't destroy it.
-    private fun load(): List<T> {
-        val raw = settings.getStringOrNull(key) ?: return emptyList()
+    override suspend fun get(id: String): T? = mutex.withLock {
+        loadIfNeeded()
+        state.value.find { idOf(it) == id }
+    }
+
+    override suspend fun save(item: T) = edit(idOf(item)) { items ->
+        val index = items.indexOfFirst { idOf(it) == idOf(item) }
+        if (index < 0) items + item else items.toMutableList().also { it[index] = item }
+    }
+
+    override suspend fun update(id: String, transform: (T) -> T): T? {
+        var updated: T? = null
+        edit { items -> items.map { if (idOf(it) == id) transform(it).also { new -> updated = new } else it } }
+        return updated
+    }
+
+    override suspend fun delete(id: String) = edit(id) { items -> items.filterNot { idOf(it) == id } }
+
+    // An unreadable entry with [replacedId] is dropped too: the user has replaced or deleted it.
+    private suspend fun edit(replacedId: String? = null, change: (List<T>) -> List<T>) = mutex.withLock {
+        loadIfNeeded()
+        val updated = change(state.value)
+        if (replacedId != null) unreadable = unreadable.filterNot { rawIdOf(it) == replacedId }
+        withContext(Dispatchers.Default) {
+            val elements = updated.map { json.encodeToJsonElement(serializer, it) } + unreadable
+            settings.putString(key, json.encodeToString(JsonElement.serializer(), JsonArray(elements)))
+        }
+        state.value = updated
+    }
+
+    // Both stored models keep their id under "id".
+    private fun rawIdOf(element: JsonElement): String? =
+        ((element as? JsonObject)?.get("id") as? JsonPrimitive)?.contentOrNull
+
+    // Called with the mutex held. Reading and decoding happen off the caller's (often the UI) thread.
+    private suspend fun loadIfNeeded() {
+        if (loaded) return
+        withContext(Dispatchers.Default) { load() }
+        loaded = true
+    }
+
+    private fun load() {
+        val raw = settings.getStringOrNull(key) ?: return
         val elements =
             try {
                 json.parseToJsonElement(raw).jsonArray
             } catch (ignored: IllegalArgumentException) {
-                null
+                // Not a JSON array at all, so nothing can be kept entry by entry: back up the whole thing.
+                backUp(raw)
+                return
             }
-        val items =
-            elements.orEmpty().mapNotNull { element ->
-                try {
-                    json.decodeFromJsonElement(serializer, element)
-                } catch (ignored: IllegalArgumentException) {
-                    null
-                }
+        val items = mutableListOf<T>()
+        val skipped = mutableListOf<JsonElement>()
+        for (element in elements) {
+            try {
+                items += json.decodeFromJsonElement(serializer, element)
+            } catch (ignored: IllegalArgumentException) {
+                skipped += element
             }
-        if (elements == null || items.size < elements.size) backUp(raw)
-        return items
+        }
+        state.value = items
+        unreadable = skipped
     }
 
-    // Keeps only the first unreadable copy: it is the one most likely to hold the user's real data.
+    // Each distinct unreadable copy gets its own key, so a later one never replaces an earlier one.
     private fun backUp(raw: String) {
-        val backupKey = "$key.unreadable"
-        if (settings.getStringOrNull(backupKey) == null) settings.putString(backupKey, raw)
+        val backupKey = generateSequence(1) { it + 1 }
+            .map { n -> if (n == 1) "$key.unreadable" else "$key.unreadable.$n" }
+            .first { settings.getStringOrNull(it).let { existing -> existing == null || existing == raw } }
+        settings.putString(backupKey, raw)
     }
 }

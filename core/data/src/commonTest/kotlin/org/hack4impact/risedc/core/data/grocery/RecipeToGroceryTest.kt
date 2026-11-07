@@ -4,6 +4,7 @@ import org.hack4impact.risedc.core.data.TestData.ingredient
 import org.hack4impact.risedc.core.data.TestData.item
 import org.hack4impact.risedc.core.data.TestData.recipe
 import org.hack4impact.risedc.core.data.model.GroceryList
+import org.hack4impact.risedc.core.data.model.StoreSection
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -69,6 +70,39 @@ class RecipeToGroceryTest {
     fun addingTheSameRecipeTwiceChangesNothing() {
         val once = GroceryList(id = "list").addRecipe(recipe())
         assertEquals(once, once.addRecipe(recipe()))
+    }
+
+    @Test
+    fun reAddingAnEditedRecipeAddsOnlyItsNewIngredients() {
+        val original = recipe(id = "r1")
+        val edited = recipe(id = "r1", ingredients = original.ingredients + ingredient("Garlic", "2 cloves"))
+        val list = GroceryList(id = "list").addRecipe(original).addRecipe(edited)
+
+        assertEquals(listOf("Rice", "Black beans", "Onion", "Garlic"), list.items.map { it.name })
+        assertEquals("1 cup", list.items.first().amount)
+    }
+
+    @Test
+    fun checkedItemStaysCheckedWhenThereIsNothingMoreToBuy() {
+        val list = GroceryList(id = "list", items = listOf(item("Salt", "1 tsp", gotIt = true)))
+        val salt = list.addRecipe(recipe(ingredients = listOf(ingredient("Salt", "")))).items.single()
+
+        assertTrue(salt.gotIt)
+        assertEquals("1 tsp", salt.amount)
+    }
+
+    @Test
+    fun mergeTakesTheRecipeSectionOverOther() {
+        val list = GroceryList(id = "list", items = listOf(item("Eggs", section = StoreSection.OTHER)))
+        val eggs = list.addRecipe(recipe(ingredients = listOf(ingredient("Eggs", "2", StoreSection.DAIRY_AND_EGGS))))
+        assertEquals(StoreSection.DAIRY_AND_EGGS, eggs.items.single().storeSection)
+    }
+
+    @Test
+    fun mergeKeepsASpecificSection() {
+        val list = GroceryList(id = "list", items = listOf(item("Eggs", section = StoreSection.DAIRY_AND_EGGS)))
+        val eggs = list.addRecipe(recipe(ingredients = listOf(ingredient("Eggs", "2", StoreSection.PRODUCE))))
+        assertEquals(StoreSection.DAIRY_AND_EGGS, eggs.items.single().storeSection)
     }
 
     @Test
