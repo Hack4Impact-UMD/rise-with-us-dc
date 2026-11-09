@@ -6,6 +6,8 @@ import org.hack4impact.risedc.core.data.network.ApiConfig
 import org.hack4impact.risedc.core.data.network.RiseJson
 import org.hack4impact.risedc.core.data.network.riseHttpClient
 import org.hack4impact.risedc.core.data.recipes.RecipeStore
+import org.hack4impact.risedc.core.data.transit.PlaceStore
+import org.hack4impact.risedc.core.data.transit.TripStore
 import org.koin.dsl.module
 
 /** Shared data layer: HTTP client now; repositories (Firestore, local cache) get bound here. */
@@ -15,4 +17,6 @@ val dataModule = module {
     single<Settings> { Settings() }
     single { RecipeStore(get(), RiseJson) }
     single { GroceryListStore(get(), RiseJson) }
+    single { TripStore(get(), RiseJson) }
+    single { PlaceStore(get(), RiseJson) }
 }
