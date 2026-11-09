@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -36,12 +37,12 @@ internal class SettingsJsonStore<T>(
 
     override fun observeAll(): Flow<List<T>> = flow {
         mutex.withLock { loadIfNeeded() }
-        emitAll(state)
+        emitAll(state.map { items -> withContext(Dispatchers.Default) { items.map(::snapshot) } })
     }
 
     override suspend fun get(id: String): T? = mutex.withLock {
         loadIfNeeded()
-        state.value.find { idOf(it) == id }
+        withContext(Dispatchers.Default) { state.value.find { idOf(it) == id }?.let(::snapshot) }
     }
 
     override suspend fun save(item: T) = edit(idOf(item)) { items ->
@@ -60,14 +61,20 @@ internal class SettingsJsonStore<T>(
     // An unreadable entry with [replacedId] is dropped too: the user has replaced or deleted it.
     private suspend fun edit(replacedId: String? = null, change: (List<T>) -> List<T>) = mutex.withLock {
         loadIfNeeded()
-        val updated = change(state.value)
-        if (replacedId != null) unreadable = unreadable.filterNot { rawIdOf(it) == replacedId }
+        val updated = change(withContext(Dispatchers.Default) { state.value.map(::snapshot) })
+        val remaining = if (replacedId == null) unreadable else unreadable.filterNot { rawIdOf(it) == replacedId }
         withContext(Dispatchers.Default) {
-            val elements = updated.map { json.encodeToJsonElement(serializer, it) } + unreadable
-            settings.putString(key, json.encodeToString(JsonElement.serializer(), JsonArray(elements)))
+            val elements = updated.map { json.encodeToJsonElement(serializer, it) }
+            val detached = elements.map { json.decodeFromJsonElement(serializer, it) }
+            settings.putString(key, json.encodeToString(JsonElement.serializer(), JsonArray(elements + remaining)))
+            // Keep memory in sync if cancellation follows the write.
+            unreadable = remaining
+            state.value = detached
         }
-        state.value = updated
     }
+
+    private fun snapshot(item: T): T =
+        json.decodeFromJsonElement(serializer, json.encodeToJsonElement(serializer, item))
 
     // Both stored models keep their id under "id".
     private fun rawIdOf(element: JsonElement): String? =
