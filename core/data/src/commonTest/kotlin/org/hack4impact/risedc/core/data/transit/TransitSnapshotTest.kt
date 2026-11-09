@@ -29,7 +29,7 @@ class TransitSnapshotTest {
         listOf(TripStep.RideRail(listOf(station), station), TripStep.RideBus(listOf(stop), stop)),
         TripSource.AD_HOC,
     )
-    private val other = Trip("other", "Other practice trip", emptyList(), TripSource.SAVED)
+    private val other = expected.copy(id = "other", name = "Other practice trip", source = TripSource.SAVED)
 
     @Test
     fun savedTripsIgnoreInputListChanges() = runTest {

@@ -2,9 +2,11 @@ package org.hack4impact.risedc.core.data.transit
 
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.test.runTest
+import org.hack4impact.risedc.core.data.model.Maneuver
 import org.hack4impact.risedc.core.data.model.Place
 import org.hack4impact.risedc.core.data.model.Trip
 import org.hack4impact.risedc.core.data.model.TripSource
+import org.hack4impact.risedc.core.data.model.TripStep
 import org.hack4impact.risedc.core.data.network.RiseJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,7 +19,12 @@ class BrowserTransitStoreTest {
         val previous = keys.associateWith { settings.getStringOrNull(it) }
         try {
             keys.forEach { settings.remove(it) }
-            val trip = Trip("browser-test", "Practice trip", emptyList(), TripSource.AD_HOC)
+            val trip = Trip(
+                "browser-test",
+                "Practice trip",
+                listOf(TripStep.Walk(Maneuver.DEPART, 1)),
+                TripSource.AD_HOC,
+            )
             val place = Place("browser-test", "Public destination", 38.9, -77.0)
             TripStore(settings, RiseJson).save(trip)
             PlaceStore(settings, RiseJson).save(place)

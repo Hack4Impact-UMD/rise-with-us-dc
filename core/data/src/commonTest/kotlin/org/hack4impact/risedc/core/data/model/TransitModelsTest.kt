@@ -46,6 +46,16 @@ class TransitModelsTest {
     }
 
     @Test
+    fun tripsMustHaveSteps() {
+        assertFailsWith<IllegalArgumentException> {
+            Trip("empty", "Empty trip", emptyList(), TripSource.SAVED)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            RiseJson.decodeFromString<Trip>("""{"id":"empty","name":"Empty trip","steps":[],"source":"SAVED"}""")
+        }
+    }
+
+    @Test
     fun maneuverJsonRoundTripsWithUnknownFallback() {
         Maneuver.entries.forEach { maneuver ->
             assertEquals(maneuver, RiseJson.decodeFromString<Maneuver>(RiseJson.encodeToString(maneuver)))
