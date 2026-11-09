@@ -4,17 +4,7 @@ name: TestFlight
 # team can install the PR on a phone from TestFlight (internal testers only).
 
 on:
-  pull_request:
-    paths:
-      - apps/**
-      - core/**
-      - iosApp/**
-      - build-logic/**
-      - gradle/**
-      - "*.gradle.kts"
-      - gradle.properties
-      - .github/workflows/testflight.yml
-      - .github/scripts/testflight-notes.mjs
+  workflow_call:
 
 # A newer push to the same PR replaces the build in progress.
 concurrency:
