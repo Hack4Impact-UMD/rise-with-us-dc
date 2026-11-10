@@ -214,14 +214,22 @@ class SnapAndCookTest {
             "Cook the beans.", "Simmer the beans.", "Roast the beans.", "Sear the beans.", "Poach the beans.",
             "Saute the beans.", "Sauté the beans.", "Reheat the beans.", "Preheat the oven.", "Fry the beans.",
             "Stir-fry the beans.", "Stir-fried beans.", "Braise the beans.", "Stew the beans.", "Scald the milk.",
-            "Put the pan on the burner.", "Use the stove.", "Warm the skillet.",
+            "Put the pan on the burner.", "Use the stove.", "Warm the skillet.", "Bake the beans.",
+            "Add baking powder, then bake.", "Baking the beans.",
         )
         heatSteps.forEach { instruction ->
             val step = RecipeStep("Next", instruction)
             assertFalse(validator.accepts(recipe.copy(steps = listOf(step))), instruction)
             assertTrue(validator.accepts(recipe.copy(steps = listOf(step.copy(safety = listOf("HOT"))))), instruction)
         }
-        val coldSteps = listOf("Add the cookies.", "Follow the cookbook.", "Search the pantry.", "Add the chard.")
+        val coldSteps = listOf(
+            "Add the cookies.",
+            "Follow the cookbook.",
+            "Search the pantry.",
+            "Add the chard.",
+            "Add the baking powder.",
+            "Stir in Baking Powder.",
+        )
         coldSteps.forEach { instruction ->
             assertTrue(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Next", instruction)))), instruction)
         }

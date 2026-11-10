@@ -15,7 +15,7 @@ data class SafetyPolicy(val neverUseIngredients: Set<String>, val allowedTools: 
 /** Validates the recipes provided by Gemini follow the orgs defines safety policy */
 internal class RecipeValidator(private val policy: SafetyPolicy) {
     private val heat = Regex(
-        "\\b(microwav|toast|(pre|re)?heat|warm|hot|boil|broil|melt|steam|bak|fry|stir-fr|" +
+        "\\b(microwav|toast|(pre|re)?heat|warm|hot|boil|broil|melt|steam|bak(?!ing\\s+powder)|fry|stir-fr|" +
             "grill|cook(?!ie|book)|simmer|roast|sear(?!ch)|poach|saut|brais|stew|scald|sizzl|" +
             "oven|stove|burner|skillet)[a-z]*",
     )
