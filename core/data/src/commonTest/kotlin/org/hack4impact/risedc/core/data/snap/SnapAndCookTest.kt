@@ -215,7 +215,8 @@ class SnapAndCookTest {
             "Saute the beans.", "Sauté the beans.", "Reheat the beans.", "Preheat the oven.", "Fry the beans.",
             "Stir-fry the beans.", "Stir-fried beans.", "Braise the beans.", "Stew the beans.", "Scald the milk.",
             "Put the pan on the burner.", "Use the stove.", "Warm the skillet.", "Bake the beans.",
-            "Add baking powder, then bake.", "Baking the beans.",
+            "Add baking powder, then bake.", "Baking the beans.", "Melt the butter.", "Melting the butter.",
+            "Add the melted butter, then melt the cheese.", "Bake on the baking sheet.",
         )
         heatSteps.forEach { instruction ->
             val step = RecipeStep("Next", instruction)
@@ -229,8 +230,59 @@ class SnapAndCookTest {
             "Add the chard.",
             "Add the baking powder.",
             "Stir in Baking Powder.",
+            "Add the melted butter.",
+            "Stir until Melted.",
+            "Place the bagels on a baking sheet.",
+            "Line two Baking Sheets with paper.",
         )
         coldSteps.forEach { instruction ->
+            assertTrue(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Next", instruction)))), instruction)
+        }
+    }
+
+    @Test
+    fun knifeActionsRequireSharpTagButPreparedFoodDoesNot() {
+        val validator = RecipeValidator(policy.copy(allowedTools = setOf("spoon", "knife")))
+        val sharpSteps = listOf(
+            "Slice the bagel.",
+            "Slicing the bagel.",
+            "Cut the bagel into slices.",
+            "Cut the bagel.",
+            "Cutting the bagel.",
+            "Chop the onion.",
+            "Dice the tomato.",
+            "Mince the garlic.",
+            "Peel the potato.",
+            "Grate the cheese.",
+            "Shred the cheese.",
+            "Shredding the cheese.",
+            "Use the knife.",
+            "Add the slices, then slice the bagel.",
+            "Add the shredded cheese, then shred the lettuce.",
+            "Add the pre-cut carrots, then cut the bagel.",
+            "Place the bagel cut side up, then cut the apple.",
+        )
+        sharpSteps.forEach { instruction ->
+            val step = RecipeStep("Next", instruction)
+            assertFalse(validator.accepts(recipe.copy(steps = listOf(step))), instruction)
+            assertTrue(validator.accepts(recipe.copy(steps = listOf(step.copy(safety = listOf("SHARP"))))), instruction)
+        }
+        val plainSteps = listOf(
+            "Top with pepperoni slices.",
+            "Add the Apple Slices.",
+            "Sprinkle the shredded mozzarella cheese on top.",
+            "Use sliced bagels.",
+            "Add the chopped onion.",
+            "Add the Diced tomatoes.",
+            "Add the minced garlic.",
+            "Add the peeled banana.",
+            "Add the grated cheese.",
+            "Add the pre-cut carrots.",
+            "Add the precut carrots.",
+            "Place the bagel cut side up.",
+            "Place the bagel cut-side up.",
+        )
+        plainSteps.forEach { instruction ->
             assertTrue(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Next", instruction)))), instruction)
         }
     }
