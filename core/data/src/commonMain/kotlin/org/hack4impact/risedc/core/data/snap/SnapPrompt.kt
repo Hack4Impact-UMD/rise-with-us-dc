@@ -36,7 +36,15 @@ internal object SnapPrompt {
         Never use anything in the supplied neverUseIngredients list. Use only the exact tool names
         in the supplied allowedTools list. Do not guess that an ambiguous food is cooked or ready
         to eat. No stovetop unless explicitly allowed.
-        Write short instructions in plain language, one action per step, with a 1–3 word shortLabel.
+        Write every step for an adult with an intellectual or developmental disability who is cooking.
+        Each step is exactly one simple action with one ingredient or one tool.
+        Start each instruction with the action word and say exactly where things go, such as "in the bowl".
+        Keep each instruction simple and under 12 words. Never join two actions with "and" or "then".
+        Add each ingredient in its own step.
+        Call each thing by the same name in every step, such as always "the bowl".
+        Never use an ingredient as already prepared, such as melted or chopped, unless an earlier step prepared it.
+        Give each step a 1–3 word shortLabel that starts with the action word, such as "Add flour".
+        Choose simple recipes with few ingredients so every action fits in $MAX_STEPS steps.
         If a recipe uses a can, list the can opener in utensils and make opening the can its own step.
         Tag every heat step HOT and every knife/cutting or can-opening step SHARP. Otherwise use an
         empty safety list.
