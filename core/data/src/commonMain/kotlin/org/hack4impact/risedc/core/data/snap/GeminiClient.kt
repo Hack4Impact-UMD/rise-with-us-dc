@@ -2,6 +2,7 @@ package org.hack4impact.risedc.core.data.snap
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -26,10 +27,19 @@ internal fun interface GeminiClient {
 }
 
 internal class HttpGeminiClient(
-    private val http: HttpClient,
+    httpClient: HttpClient,
     private val apiKey: String,
     private val model: String = "gemini-3.5-flash",
 ) : GeminiClient {
+    // Gemini sends nothing until the whole reply is ready, which can take 15-50 s. OkHttp's default
+    // 10 s read timeout would report every slow reply as a network error, so wait past SnapAndCook's
+    // own deadline and let that deadline decide.
+    private val http = httpClient.config {
+        install(HttpTimeout) {
+            requestTimeoutMillis = TIMEOUT_MILLIS
+            socketTimeoutMillis = TIMEOUT_MILLIS
+        }
+    }
 
     override suspend fun generate(photo: PreparedPhoto, policy: SafetyPolicy): GeminiReply = try {
         // Encode the safety policy as JSON to send to the Gemini API
@@ -48,6 +58,7 @@ internal class HttpGeminiClient(
                     systemInstruction = Content(
                         listOf(
                             Part(text = SnapPrompt.SYSTEM_INSTRUCTION),
+                            Part(text = SnapPrompt.STICKER_LIST),
                             Part(text = policyText),
                         ),
                     ),
@@ -111,5 +122,6 @@ internal class HttpGeminiClient(
 
     private companion object {
         const val MAX_OUTPUT_TOKENS = 4096
+        const val TIMEOUT_MILLIS = 35_000L
     }
 }
