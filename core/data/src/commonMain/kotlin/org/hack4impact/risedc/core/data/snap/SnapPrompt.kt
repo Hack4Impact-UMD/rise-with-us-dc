@@ -11,7 +11,8 @@ import org.hack4impact.risedc.core.data.sticker.StickerCatalog
 
 /** Fixed prompt and response schema for Snap & Cook feature. */
 internal object SnapPrompt {
-    const val MAX_RECIPES = 3
+    /** Asked for and allowed per call: enough for a choice, and each extra recipe makes the reply slower. */
+    const val MAX_RECIPES = 2
     const val MAX_TITLE_LENGTH = 60
     const val MAX_INGREDIENTS = 12
     const val MAX_NAME_LENGTH = 40
@@ -29,8 +30,9 @@ internal object SnapPrompt {
     val SYSTEM_INSTRUCTION = """
         First decide whether any food is visible in this photo.
         If no food is visible, return foodFound false and an empty recipes list. Do not invent recipes.
-        If food is visible, return foodFound true and as many different, complete and safe recipes
-        as possible from those ingredients, but never more than $MAX_RECIPES.
+        If food is visible, return foodFound true and exactly $MAX_RECIPES different, complete and safe recipes
+        from those ingredients. If fewer safe recipes are possible, return only the safe ones.
+        Never add an unsafe recipe to reach $MAX_RECIPES.
 
         A safe recipe follows every rule below. Never use raw meat, fish or eggs.
         Never use anything in the supplied neverUseIngredients list. Use only the exact tool names

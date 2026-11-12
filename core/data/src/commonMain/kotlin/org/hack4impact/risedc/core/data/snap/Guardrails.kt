@@ -1,8 +1,5 @@
 package org.hack4impact.risedc.core.data.snap
 
-import org.hack4impact.risedc.core.data.model.Ingredient
-import org.hack4impact.risedc.core.data.model.RecipeStep
-
 /** Org wide safety policy which defines what ingredients the recipes should not include
  and what tools are allowed for the apps users */
 data class SafetyPolicy(val neverUseIngredients: Set<String>, val allowedTools: Set<String>) {
@@ -35,41 +32,48 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
             "ribs?|hamburgers?(?! buns?)|meatballs?)\\b|" +
             "\\b(ceviche|(steak|beef|tuna|salmon) tartare)\\b",
     )
+    
     private val neverUse = policy.neverUseIngredients.map { Regex("\\b${Regex.escape(it.trim().lowercase())}") }
     private val allowedTools = policy.allowedTools.map { it.trim().lowercase() }.toSet()
 
-    fun accepts(recipe: GeneratedRecipe): Boolean = recipe.title.isNotBlank() &&
-        recipe.title.length <= SnapPrompt.MAX_TITLE_LENGTH &&
-        !mentionsForbiddenFood(recipe) &&
-        recipe.minutes in 1..SnapPrompt.MAX_MINUTES &&
-        recipe.ingredients.size in 1..SnapPrompt.MAX_INGREDIENTS &&
-        recipe.ingredients.all(::acceptsIngredient) &&
-        recipe.utensils.size in 1..SnapPrompt.MAX_UTENSILS &&
-        recipe.utensils.all { it.trim().lowercase() in allowedTools } &&
-        recipe.steps.size in 1..SnapPrompt.MAX_STEPS &&
-        recipe.steps.all(::acceptsStep)
+    fun accepts(recipe: GeneratedRecipe): Boolean {
+        val ingredientNames = recipe.ingredients.map { it.name.key() }.toSet()
+        val utensilNames = recipe.utensils.map { it.name.key() }.toSet()
+        return recipe.title.isNotBlank() &&
+            recipe.title.length <= SnapPrompt.MAX_TITLE_LENGTH &&
+            !mentionsForbiddenFood(recipe) &&
+            recipe.minutes in 1..SnapPrompt.MAX_MINUTES &&
+            recipe.servings in 1..SnapPrompt.MAX_SERVINGS &&
+            recipe.ingredients.size in 1..SnapPrompt.MAX_INGREDIENTS &&
+            recipe.ingredients.all(::acceptsIngredient) &&
+            recipe.utensils.size in 1..SnapPrompt.MAX_UTENSILS &&
+            recipe.utensils.all { it.name.key() in allowedTools } &&
+            recipe.steps.size in 1..SnapPrompt.MAX_STEPS &&
+            recipe.steps.all(::acceptsStep) &&
+            // A step may only point at items the recipe lists, so the app can find their pictures.
+            recipe.steps.all { step ->
+                step.ingredients.all { it.key() in ingredientNames } && step.utensils.all { it.key() in utensilNames }
+            }
+    }
 
     private fun mentionsForbiddenFood(recipe: GeneratedRecipe): Boolean {
         val text = (
             recipe.ingredients.map { it.name } +
-                recipe.steps.flatMap { listOf(it.shortLabel, it.instruction) } +
+                recipe.steps.map { it.instruction } +
                 recipe.title
             ).joinToString(". ").lowercase() // Keeps separate fields from matching as one phrase.
         return rawFood.containsMatchIn(text) || neverUse.any { it.containsMatchIn(text) }
     }
 
-    private fun acceptsIngredient(ingredient: Ingredient): Boolean = ingredient.name.isNotBlank() &&
+    private fun acceptsIngredient(ingredient: GeneratedIngredient): Boolean = ingredient.name.isNotBlank() &&
         ingredient.name.length <= SnapPrompt.MAX_NAME_LENGTH &&
-        ingredient.amount.isNotBlank() &&
-        ingredient.amount.length <= SnapPrompt.MAX_AMOUNT_LENGTH
+        ingredient.amount.length <= SnapPrompt.MAX_AMOUNT_LENGTH &&
+        amount.matches(ingredient.amount.trim().lowercase())
 
-    private fun acceptsStep(step: RecipeStep): Boolean {
-        val text = "${step.shortLabel} ${step.instruction}".lowercase()
-        return step.shortLabel.isNotBlank() &&
-            step.shortLabel.length <= SnapPrompt.MAX_LABEL_LENGTH &&
-            step.instruction.isNotBlank() &&
+    private fun acceptsStep(step: GeneratedStep): Boolean {
+        val text = step.instruction.lowercase()
+        return step.instruction.isNotBlank() &&
             step.instruction.length <= SnapPrompt.MAX_INSTRUCTION_LENGTH &&
-            step.photo == null &&
             step.safety.size <= SnapPrompt.SAFETY_TAGS.size &&
             step.safety.all { it in SnapPrompt.SAFETY_TAGS } &&
             (!heat.containsMatchIn(text) || "HOT" in step.safety) &&
@@ -77,3 +81,6 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
             restrictedTools.findAll(text).all { it.value in allowedTools }
     }
 }
+
+/** standardizing item names for simpler regex comparison */
+internal fun String.key(): String = trim().lowercase()
