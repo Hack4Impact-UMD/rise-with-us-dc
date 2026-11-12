@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 enum class BackButtonStyle {
     /** Outlined disc, for use on white. */
     OnLight,
+
     /** White disc, for use on the primary-color band. */
     OnColor,
 }

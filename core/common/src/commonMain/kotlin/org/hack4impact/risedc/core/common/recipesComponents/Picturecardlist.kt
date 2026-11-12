@@ -16,11 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /** What the list needs to draw one card. */
-data class PictureCardItem(
-    val id: String,
-    val label: String,
-    val painter: Painter? = null,
-)
+data class PictureCardItem(val id: String, val label: String, val painter: Painter? = null)
 
 /** Width at which a window leaves the Compact size class (Material: 600dp). */
 private val CompactWidthLimit = 600.dp

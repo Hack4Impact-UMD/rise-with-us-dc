@@ -50,8 +50,11 @@ fun CheckRow(
             modifier = Modifier
                 .size(28.dp)
                 .then(
-                    if (checked) Modifier.background(primary, shape)
-                    else Modifier.border(2.dp, primary, shape)
+                    if (checked) {
+                        Modifier.background(primary, shape)
+                    } else {
+                        Modifier.border(2.dp, primary, shape)
+                    },
                 ),
             contentAlignment = Alignment.Center,
         ) {

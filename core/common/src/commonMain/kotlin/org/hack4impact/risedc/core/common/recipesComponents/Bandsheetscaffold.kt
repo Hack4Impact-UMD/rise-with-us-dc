@@ -44,8 +44,8 @@ fun BandSheetScaffold(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    bandHeight: Dp = 200.dp,     // band height below the status bar
-    sheetOverlap: Dp = 24.dp,    // how far the sheet rises over the band
+    bandHeight: Dp = 200.dp, // band height below the status bar
+    sheetOverlap: Dp = 24.dp, // how far the sheet rises over the band
     bandContent: @Composable BoxScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {

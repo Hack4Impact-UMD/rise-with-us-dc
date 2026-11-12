@@ -21,11 +21,7 @@ import androidx.compose.ui.unit.dp
  * The app name is a parameter because it is still undecided ("APP NAME?" in the mockup).
  */
 @Composable
-fun BrandHeader(
-    logo: Painter,
-    appName: String,
-    modifier: Modifier = Modifier,
-) {
+fun BrandHeader(logo: Painter, appName: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,

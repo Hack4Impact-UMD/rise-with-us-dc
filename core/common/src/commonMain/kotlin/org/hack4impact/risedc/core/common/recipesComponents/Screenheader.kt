@@ -21,11 +21,7 @@ import androidx.compose.ui.unit.dp
  * (design rule 1). Pass onBack = null on screens without a back button.
  */
 @Composable
-fun ScreenHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-    onBack: (() -> Unit)? = null,
-) {
+fun ScreenHeader(title: String, modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
     Box(
         modifier = modifier.fillMaxWidth().heightIn(min = 64.dp),
         contentAlignment = Alignment.Center,
