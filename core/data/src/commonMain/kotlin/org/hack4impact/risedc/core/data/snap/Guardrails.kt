@@ -12,15 +12,13 @@ data class SafetyPolicy(val neverUseIngredients: Set<String>, val allowedTools: 
 /** Validates the recipes provided by Gemini follow the orgs defines safety policy */
 internal class RecipeValidator(private val policy: SafetyPolicy) {
     private val heat = Regex(
-        "\\b(microwav|toast|(pre|re)?heat|warm|hot|boil|broil|melt(?!ed\\b)|steam|" +
+        "\\b(microwav(?!e[- ]safe\\b)|toast|(pre|re)?heat|warm|hot|boil|broil|melt(?!ed\\b)|steam|" +
             "bak(?!ing\\s+(powder|sheets?)\\b)|fry|stir-fr|grill|cook(?!ie|book)|simmer|roast|sear(?!ch)|" +
             "poach|saut|brais|stew|scald|sizzl|" +
             "oven|stove|burner|skillet)[a-z]*",
     )
     private val sharp = Regex(
-        // Past-tense forms (sliced, chopped) describe food that is already prepared, not a cutting step.
-        // A bare stem always counts, so "shred" still matches even though it ends in "ed".
-        "\\b((knife|knives|(?<!pre-)cut(?![- ]side\\b)|slic(?!es\\b)|chop|dic|minc|peel|grate|shred)" +
+        "\\b((knife|knives|(?<!pre-)cut(?![- ]side\\b)|slic(?!es\\b)|chop|dic|minc|peeler|grate|shred)" +
             "(\\b|[a-z]*(?<!ed)\\b)|" +
             "can openers?|open(ing)?( (the|a))? (cans?|canned)\\b)",
     )
