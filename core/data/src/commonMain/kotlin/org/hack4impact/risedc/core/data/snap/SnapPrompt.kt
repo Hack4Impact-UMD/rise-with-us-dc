@@ -50,9 +50,11 @@ internal object SnapPrompt {
         Add each ingredient in its own step. Never use an ingredient as already prepared, such as melted or chopped,
         unless an earlier step prepares it or it is already prepared in the photo.
         Call each ingredient by its short everyday name, such as "oats" instead of "steel-cut oats".
-        Give each ingredient amount as a number and a unit, such as "1 cup", "1/2 tsp", "2 slices" or "1 shake".
+        Each ingredient's amount is how much to buy at the store for the recipe, not how much the recipe uses:
+        a number and a package, such as "1 bag" of flour, "1 jar" of peanut butter, "1 loaf" of bread or "1 dozen" eggs.
         Never write an amount as words or a sentence, and keep it within $MAX_AMOUNT_LENGTH characters.
-        When a step adds an ingredient, say its amount in the instruction if the amount matters for the recipe.
+        Say how much to use in the step that adds the ingredient, such as "Add 2 cups of flour to the bowl."
+        Leave it out only when the exact amount doesn't matter to the recipe, such as "Spread peanut butter on the bread."
         For each step, list the ingredients and utensils it uses, written exactly as in the recipe's lists.
         Pick each imageId from the sticker lists: the recipe's from Dishes, each ingredient's from Ingredients,
         each utensil's from Utensils and each step's from Steps. Choose the sticker that looks most like it,
