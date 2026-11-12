@@ -47,7 +47,7 @@ fun DevScreen(onBack: () -> Unit) {
             },
             label = {
                 Text("Enter a message")
-            }
+            },
         )
         Button(onClick = {
             run { message }

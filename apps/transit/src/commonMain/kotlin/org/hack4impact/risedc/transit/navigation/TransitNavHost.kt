@@ -29,7 +29,7 @@ fun TransitNavHost(navController: NavHostController = rememberNavController()) {
                     "Saved trip" to { navController.navigate(TransitRoute.TripOverview(tripId = SAMPLE_TRIP_ID)) },
                     "Places" to { navController.navigate(TransitRoute.Places) },
                     "Staff" to { navController.navigate(TransitRoute.StaffHome) },
-                    "Dev" to { navController.navigate(TransitRoute.Dev)},
+                    "Dev" to { navController.navigate(TransitRoute.Dev) },
                 ),
                 content = { ReadAloudDemo() },
             )
