@@ -1,14 +1,20 @@
 package org.hack4impact.risedc.transit.dev
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.ui.Modifier
 
 @Composable
 fun DevScreen(onBack: () -> Unit) {
@@ -16,6 +22,7 @@ fun DevScreen(onBack: () -> Unit) {
     var result by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
 
+    @Suppress("TooGenericExceptionCaught")
     fun run(block: suspend () -> String) {
         scope.launch {
             result = "Running…"
@@ -29,7 +36,7 @@ fun DevScreen(onBack: () -> Unit) {
         }
     }
 
-    Column (modifier = Modifier.safeContentPadding()){
+    Column(modifier = Modifier.safeContentPadding()) {
         Button(onClick = onBack) {
             Text("Back")
         }
