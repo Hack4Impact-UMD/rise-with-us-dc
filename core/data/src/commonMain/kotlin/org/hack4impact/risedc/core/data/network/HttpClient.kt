@@ -20,6 +20,9 @@ data class ApiConfig(val baseUrl: String) {
 val RiseJson = Json {
     ignoreUnknownKeys = true
     explicitNulls = false
+
+    // An unknown enum value (e.g. a renamed StoreSection) falls back to the property's default instead of failing.
+    coerceInputValues = true
 }
 
 fun riseHttpClient(config: ApiConfig): HttpClient = HttpClient {

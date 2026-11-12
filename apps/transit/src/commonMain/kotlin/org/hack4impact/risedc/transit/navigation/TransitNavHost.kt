@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import org.hack4impact.risedc.core.ui.placeholder.PlaceholderScreen
 import org.hack4impact.risedc.transit.dev.DevScreen
+import org.hack4impact.risedc.transit.speech.ReadAloudDemo
 
 // Sample arguments so the placeholder graph can be clicked through before real data exists.
 private const val SAMPLE_TRIP_ID = "sample-trip"
@@ -28,6 +29,7 @@ fun TransitNavHost(navController: NavHostController = rememberNavController()) {
                     "Staff" to { navController.navigate(TransitRoute.StaffHome) },
                     "Dev" to { navController.navigate(TransitRoute.Dev)},
                 ),
+                content = { ReadAloudDemo() },
             )
         }
         composable<TransitRoute.Places> {

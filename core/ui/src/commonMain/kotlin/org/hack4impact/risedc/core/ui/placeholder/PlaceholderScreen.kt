@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -25,16 +27,18 @@ fun PlaceholderScreen(
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     links: List<Pair<String, () -> Unit>> = emptyList(),
+    content: @Composable () -> Unit = {},
 ) {
     Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            Modifier.safeContentPadding().padding(24.dp),
+            Modifier.safeContentPadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(title, style = MaterialTheme.typography.headlineMedium)
             Text("Placeholder", style = MaterialTheme.typography.bodyMedium)
             links.forEach { (label, onClick) -> Button(onClick = onClick) { Text(label) } }
             if (onBack != null) OutlinedButton(onClick = onBack) { Text("Back") }
+            content()
         }
     }
 }
