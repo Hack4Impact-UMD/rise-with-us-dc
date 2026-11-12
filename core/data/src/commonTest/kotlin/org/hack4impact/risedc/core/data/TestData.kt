@@ -17,7 +17,7 @@ internal object TestData {
 
     fun ingredient(
         name: String,
-        amount: String = "1 cup",
+        amount: String = "1 bag",
         section: StoreSection = StoreSection.PANTRY,
         imageId: String? = null,
     ) = Ingredient(name = name, amount = amount, imageId = imageId, storeSection = section)
@@ -26,7 +26,7 @@ internal object TestData {
         id: String = "recipe-1",
         ingredients: List<Ingredient> =
             listOf(
-                ingredient("Rice", "1 cup", StoreSection.PANTRY, imageId = "351"),
+                ingredient("Rice", "1 bag", StoreSection.PANTRY, imageId = "351"),
                 ingredient("Black beans", "1 can", StoreSection.PANTRY, imageId = "287"),
                 ingredient("Onion", "1", StoreSection.PRODUCE),
             ),
