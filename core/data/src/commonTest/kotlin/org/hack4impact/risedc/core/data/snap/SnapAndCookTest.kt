@@ -7,13 +7,16 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import org.hack4impact.risedc.core.data.model.Ingredient
 import org.hack4impact.risedc.core.data.model.MealType
-import org.hack4impact.risedc.core.data.model.RecipeStep
+import org.hack4impact.risedc.core.data.model.RecipeSource
+import org.hack4impact.risedc.core.data.model.StepItem
 import org.hack4impact.risedc.core.data.model.StoreSection
+import org.hack4impact.risedc.core.data.model.Utensil
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SnapAndCookTest {
@@ -22,9 +25,10 @@ class SnapAndCookTest {
         title = "Beans",
         mealType = MealType.LUNCH,
         minutes = 2,
-        ingredients = listOf(Ingredient("canned beans", "1 can", StoreSection.PANTRY)),
-        utensils = listOf("spoon"),
-        steps = listOf(RecipeStep("Mix beans", "Mix the beans.")),
+        servings = 1,
+        ingredients = listOf(GeneratedIngredient("canned beans", "1 can", StoreSection.PANTRY)),
+        utensils = tools("spoon"),
+        steps = listOf(step("Mix the beans.")),
     )
 
     @Test
@@ -93,11 +97,11 @@ class SnapAndCookTest {
             recipe.copy(ingredients = listOf(recipe.ingredients.single().copy(name = ""))),
             recipe.copy(ingredients = listOf(recipe.ingredients.single().copy(name = "raw chicken with cooked rice"))),
             recipe.copy(ingredients = listOf(recipe.ingredients.single().copy(name = "Raw Eggs"))),
-            recipe.copy(ingredients = listOf(recipe.ingredients.single().copy(amount = ""))),
-            recipe.copy(utensils = listOf("oven")),
+            recipe.copy(ingredients = listOf(recipe.ingredients.single().copy(amount = "some"))),
+            recipe.copy(utensils = tools("oven")),
             recipe.copy(steps = List(7) { recipe.steps.single() }),
-            recipe.copy(steps = listOf(RecipeStep("", ""))),
-            recipe.copy(steps = listOf(RecipeStep("Use oven", "Heat in the oven.", safety = listOf("HOT")))),
+            recipe.copy(steps = listOf(step(""))),
+            recipe.copy(steps = listOf(step("Heat in the oven.", "HOT"))),
         )
         invalid.forEach { assertFalse(validator.accepts(it)) }
     }
@@ -131,7 +135,7 @@ class SnapAndCookTest {
         rejected.forEach { name ->
             assertFalse(validator.accepts(recipe.copy(ingredients = listOf(ingredient.copy(name = name)))), name)
         }
-        assertFalse(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Add meat", "Add the uncooked shrimp.")))))
+        assertFalse(validator.accepts(recipe.copy(steps = listOf(step("Add the uncooked shrimp.")))))
         val allowed = listOf(
             "raw eggplant",
             "raw carrots",
@@ -154,7 +158,7 @@ class SnapAndCookTest {
             recipe.copy(ingredients = listOf(ingredient.copy(name = "Peanut Butter"))),
             recipe.copy(ingredients = listOf(ingredient.copy(name = "salted peanuts"))),
             recipe.copy(title = "Peanut beans"),
-            recipe.copy(steps = listOf(RecipeStep("Add topping", "Add peanuts to the beans."))),
+            recipe.copy(steps = listOf(step("Add peanuts to the beans."))),
         )
         rejected.forEach { assertFalse(validator.accepts(it)) }
         val allowed = listOf("canned corn", "apples", "raw carrots", "cooked chicken")
@@ -175,35 +179,132 @@ class SnapAndCookTest {
     @Test
     fun openingACanRequiresSharpButMentioningCannedFoodDoesNot() {
         val validator = RecipeValidator(policy.copy(allowedTools = setOf("can opener")))
-        val canRecipe = recipe.copy(utensils = listOf("can opener"))
+        val canRecipe = recipe.copy(utensils = tools("can opener"))
         val openingSteps = listOf(
-            RecipeStep("Open can", "Open the can of beans."),
-            RecipeStep("Open beans", "Open the canned beans."),
-            RecipeStep("Open beans", "Use the can opener on the beans."),
+            step("Open the can of beans."),
+            step("Open the canned beans."),
+            step("Use the can opener on the beans."),
         )
         openingSteps.forEach { step ->
             assertFalse(validator.accepts(canRecipe.copy(steps = listOf(step))))
             assertTrue(validator.accepts(canRecipe.copy(steps = listOf(step.copy(safety = listOf("SHARP"))))))
         }
-        assertTrue(validator.accepts(canRecipe.copy(steps = listOf(RecipeStep("Add beans", "Add the canned beans.")))))
+        assertTrue(validator.accepts(canRecipe.copy(steps = listOf(step("Add the canned beans.")))))
         assertFalse(RecipeValidator(policy).accepts(canRecipe))
     }
 
     @Test
     fun allowedToolsIgnoreCase() {
         val validator = RecipeValidator(policy.copy(allowedTools = setOf("Spoon", "Oven")))
-        val ovenStep = RecipeStep("Bake", "Bake in the oven.", safety = listOf("HOT"))
-        assertTrue(validator.accepts(recipe.copy(utensils = listOf("spoon"), steps = listOf(ovenStep))))
-        assertTrue(validator.accepts(recipe.copy(utensils = listOf("SPOON"))))
-        assertFalse(validator.accepts(recipe.copy(utensils = listOf("fork"))))
+        val ovenStep = step("Bake in the oven.", "HOT")
+        assertTrue(validator.accepts(recipe.copy(utensils = tools("spoon"), steps = listOf(ovenStep))))
+        assertTrue(validator.accepts(recipe.copy(utensils = tools("SPOON"))))
+        assertFalse(validator.accepts(recipe.copy(utensils = tools("fork"))))
     }
 
     @Test
-    fun shortLabelsAreLimitedByLengthNotWordCount() {
+    fun servingsMustBeBetweenOneAndTheLimit() {
         val validator = RecipeValidator(policy)
-        val instruction = "Mix the beans."
-        assertTrue(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Add the canned beans", instruction)))))
-        assertFalse(validator.accepts(recipe.copy(steps = listOf(RecipeStep("a".repeat(26), instruction)))))
+        listOf(1, SnapPrompt.MAX_SERVINGS).forEach { assertTrue(validator.accepts(recipe.copy(servings = it)), "$it") }
+        listOf(0, -1, SnapPrompt.MAX_SERVINGS + 1).forEach {
+            assertFalse(validator.accepts(recipe.copy(servings = it)), "$it")
+        }
+    }
+
+    @Test
+    fun storeAmountsAreANumberAndAShortPackage() {
+        val validator = RecipeValidator(policy)
+        val ingredient = recipe.ingredients.single()
+        val short = listOf("1 bag", "1 jar", "1 loaf", "1 dozen", "2 cans", "1 small box", "3", "1 Bunch", " 1 bag ")
+        short.forEach { amount ->
+            assertTrue(validator.accepts(recipe.copy(ingredients = listOf(ingredient.copy(amount = amount)))), amount)
+        }
+        val long = listOf(
+            "",
+            " ",
+            "a jar",
+            "some",
+            "one bag",
+            "1 bag, any brand",
+            "1 can (15 oz)",
+            "1 loaf of whole wheat bread",
+            "enough for the recipe",
+        )
+        long.forEach { amount ->
+            assertFalse(validator.accepts(recipe.copy(ingredients = listOf(ingredient.copy(amount = amount)))), amount)
+        }
+    }
+
+    @Test
+    fun stepsMayOnlyUseItemsTheRecipeLists() {
+        val validator = RecipeValidator(policy)
+        val listed = step("Mix the beans.").copy(ingredients = listOf(" Canned Beans "), utensils = listOf("SPOON"))
+        assertTrue(validator.accepts(recipe.copy(steps = listOf(listed))))
+        assertFalse(validator.accepts(recipe.copy(steps = listOf(listed.copy(ingredients = listOf("rice"))))))
+        assertFalse(validator.accepts(recipe.copy(steps = listOf(listed.copy(utensils = listOf("fork"))))))
+    }
+
+    @Test
+    fun toRecipeAttachesPicturesAndCopiesThemOntoSteps() {
+        val generated = recipe.copy(
+            title = " Toast with jelly ",
+            servings = 2,
+            imageId = "D01",
+            ingredients = listOf(
+                GeneratedIngredient("Bread", "2 slices", StoreSection.PANTRY, imageId = "R01"),
+                GeneratedIngredient("Jelly", "1 tbsp", StoreSection.PANTRY, imageId = "made-up"),
+            ),
+            utensils = listOf(GeneratedUtensil("Knife", "K46"), GeneratedUtensil("Plate", SnapPrompt.NO_IMAGE)),
+            steps = listOf(
+                GeneratedStep(
+                    instruction = "Spread 1 tbsp of jelly on the bread.",
+                    imageId = "STEP02",
+                    ingredients = listOf("jelly", "BREAD"),
+                    utensils = listOf("knife"),
+                ),
+            ),
+        )
+        val mapped = generated.toRecipe("id-1")
+        assertEquals("id-1", mapped.id)
+        assertEquals("Toast with jelly", mapped.title)
+        assertEquals(2, mapped.servings)
+        assertEquals("D01", mapped.imageId)
+        assertEquals(RecipeSource.GENERATED, mapped.source)
+        assertEquals("R01", mapped.ingredients[0].imageId)
+        assertNull(mapped.ingredients[1].imageId, "an id that isn't in the catalog becomes null")
+        assertEquals(listOf(Utensil("Knife", "K46"), Utensil("Plate", null)), mapped.utensils)
+        val step = mapped.steps.single()
+        assertEquals("STEP02", step.imageId)
+        assertEquals(listOf(StepItem("Jelly", null), StepItem("Bread", "R01")), step.ingredients)
+        assertEquals(listOf(StepItem("Knife", "K46")), step.utensils)
+    }
+
+    @Test
+    fun imageIdsMustComeFromTheMatchingList() {
+        // A real id from the wrong list is still no picture: a dish isn't an ingredient, a step tile isn't a dish.
+        val generated = recipe.copy(
+            imageId = "STEP02",
+            ingredients = listOf(GeneratedIngredient("Toast", "1 slice", imageId = "D01")),
+            steps = listOf(step("Mix the beans.").copy(imageId = "K45")),
+        )
+        val mapped = generated.toRecipe("id")
+        assertNull(mapped.imageId)
+        assertNull(mapped.ingredients.single().imageId)
+        assertNull(mapped.steps.single().imageId)
+    }
+
+    @Test
+    fun storeSectionComesFromTheStickerWhenItHasOne() {
+        val ingredients = listOf(
+            // Whole milk is Dairy & eggs in the manifest, whatever Gemini says.
+            GeneratedIngredient("Milk", "1 cup", StoreSection.PANTRY, imageId = "308"),
+            // No sticker: Gemini's section is kept.
+            GeneratedIngredient("Mystery", "1 cup", StoreSection.DELI),
+            // R09 has no section in the manifest, so Gemini's is kept.
+            GeneratedIngredient("Berries", "1 cup", StoreSection.FROZEN, imageId = "R09"),
+        )
+        val sections = recipe.copy(ingredients = ingredients).toRecipe("id").ingredients.map(Ingredient::storeSection)
+        assertEquals(listOf(StoreSection.DAIRY_AND_EGGS, StoreSection.DELI, StoreSection.FROZEN), sections)
     }
 
     @Test
@@ -219,7 +320,7 @@ class SnapAndCookTest {
             "Add the melted butter, then melt the cheese.", "Bake on the baking sheet.",
         )
         heatSteps.forEach { instruction ->
-            val step = RecipeStep("Next", instruction)
+            val step = step(instruction)
             assertFalse(validator.accepts(recipe.copy(steps = listOf(step))), instruction)
             assertTrue(validator.accepts(recipe.copy(steps = listOf(step.copy(safety = listOf("HOT"))))), instruction)
         }
@@ -236,7 +337,7 @@ class SnapAndCookTest {
             "Line two Baking Sheets with paper.",
         )
         coldSteps.forEach { instruction ->
-            assertTrue(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Next", instruction)))), instruction)
+            assertTrue(validator.accepts(recipe.copy(steps = listOf(step(instruction)))), instruction)
         }
     }
 
@@ -263,7 +364,7 @@ class SnapAndCookTest {
             "Place the bagel cut side up, then cut the apple.",
         )
         sharpSteps.forEach { instruction ->
-            val step = RecipeStep("Next", instruction)
+            val step = step(instruction)
             assertFalse(validator.accepts(recipe.copy(steps = listOf(step))), instruction)
             assertTrue(validator.accepts(recipe.copy(steps = listOf(step.copy(safety = listOf("SHARP"))))), instruction)
         }
@@ -283,16 +384,16 @@ class SnapAndCookTest {
             "Place the bagel cut-side up.",
         )
         plainSteps.forEach { instruction ->
-            assertTrue(validator.accepts(recipe.copy(steps = listOf(RecipeStep("Next", instruction)))), instruction)
+            assertTrue(validator.accepts(recipe.copy(steps = listOf(step(instruction)))), instruction)
         }
     }
 
     @Test
     fun heatAndKnifeStepsRequireTagsButAreNotRestrictedToColdActions() {
         val validator = RecipeValidator(policy.copy(allowedTools = setOf("microwave", "knife")))
-        val heatStep = RecipeStep("Heat beans", "Microwave the beans.", safety = listOf("HOT"))
-        val knifeStep = RecipeStep("Cut food", "Slice the food.", safety = listOf("SHARP"))
-        val warmRecipe = recipe.copy(utensils = listOf("microwave", "knife"), steps = listOf(heatStep, knifeStep))
+        val heatStep = step("Microwave the beans.", "HOT")
+        val knifeStep = step("Slice the food.", "SHARP")
+        val warmRecipe = recipe.copy(utensils = tools("microwave", "knife"), steps = listOf(heatStep, knifeStep))
         assertTrue(validator.accepts(warmRecipe))
         assertFalse(validator.accepts(warmRecipe.copy(steps = listOf(heatStep.copy(safety = emptyList())))))
         assertFalse(validator.accepts(warmRecipe.copy(steps = listOf(knifeStep.copy(safety = emptyList())))))
@@ -377,6 +478,10 @@ class SnapAndCookTest {
         val badPhoto = GeminiSnapAndCook(client, budget(), policy, hasKey = true, prepare = { null })
         assertEquals(SnapResult.BadPhoto, badPhoto.recipesFrom(byteArrayOf()))
     }
+
+    private fun step(instruction: String, vararg safety: String) = GeneratedStep(instruction, safety = safety.toList())
+
+    private fun tools(vararg names: String) = names.map { GeneratedUtensil(it) }
 
     private fun budget() = GenerationBudget(MapSettings()) { LocalDate(2026, 10, 26) }
 
