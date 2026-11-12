@@ -9,6 +9,8 @@ import androidx.navigation.toRoute
 import org.hack4impact.risedc.core.ui.placeholder.PlaceholderScreen
 import org.hack4impact.risedc.transit.dev.DevScreen
 import org.hack4impact.risedc.transit.speech.ReadAloudDemo
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.launch
 
 // Sample arguments so the placeholder graph can be clicked through before real data exists.
 private const val SAMPLE_TRIP_ID = "sample-trip"
@@ -86,7 +88,7 @@ fun TransitNavHost(navController: NavHostController = rememberNavController()) {
             PlaceholderScreen(title = "Staff Places", onBack = back)
         }
         composable<TransitRoute.Dev> {
-            DevScreen()
+            DevScreen(onBack = back)
         }
     }
 }
