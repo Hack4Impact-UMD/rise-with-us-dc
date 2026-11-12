@@ -2,9 +2,8 @@ package org.hack4impact.risedc.core.data.snap
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
-import org.hack4impact.risedc.core.data.model.Ingredient
 import org.hack4impact.risedc.core.data.model.MealType
-import org.hack4impact.risedc.core.data.model.RecipeStep
+import org.hack4impact.risedc.core.data.model.StoreSection
 
 // --- A. Gemini generateContent request/response (https://ai.google.dev/api/generate-content) ---
 
@@ -50,12 +49,41 @@ internal data class Candidate(val content: Content? = null, val finishReason: St
 @Serializable
 internal data class GeneratedReply(val foodFound: Boolean, val recipes: List<GeneratedRecipe> = emptyList())
 
+/*
+ * Gemini's own shapes, kept apart from the app models so a new model field can't be filled by Gemini
+ * unchecked. Image ids are Gemini's pick from the sticker lists, or NO_IMAGE; toRecipe() turns
+ * anything that isn't a real catalog id into null.
+ */
 @Serializable
 internal data class GeneratedRecipe(
     val title: String,
     val mealType: MealType,
     val minutes: Int,
-    val ingredients: List<Ingredient>,
-    val utensils: List<String>,
-    val steps: List<RecipeStep>,
+    val servings: Int,
+    val imageId: String = SnapPrompt.NO_IMAGE,
+    val ingredients: List<GeneratedIngredient>,
+    val utensils: List<GeneratedItem>,
+    val steps: List<GeneratedStep>,
+)
+
+@Serializable
+internal data class GeneratedIngredient(
+    val name: String,
+    val amount: String,
+    val storeSection: StoreSection = StoreSection.OTHER,
+    val imageId: String = SnapPrompt.NO_IMAGE,
+)
+
+/** A utensil: its simple name and sticker id. */
+@Serializable
+internal data class GeneratedItem(val name: String, val imageId: String = SnapPrompt.NO_IMAGE)
+
+/** [ingredients] and [utensils] name items from the recipe's own lists. */
+@Serializable
+internal data class GeneratedStep(
+    val instruction: String,
+    val imageId: String = SnapPrompt.NO_IMAGE,
+    val ingredients: List<String> = emptyList(),
+    val utensils: List<String> = emptyList(),
+    val safety: List<String> = emptyList(),
 )
