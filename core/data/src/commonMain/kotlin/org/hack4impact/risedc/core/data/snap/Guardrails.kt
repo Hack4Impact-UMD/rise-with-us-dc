@@ -33,7 +33,7 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
             "\\b(ceviche|(steak|beef|tuna|salmon) tartare)\\b",
     )
 
-    /** A number and at most two words: "1 cup", "1/2 tsp", "1 1/2 cups", "2 slices", "3". */
+    /** A number and at most two words: "1 bag", "1 jar", "2 cans", "1 small box", "3". */
     private val amount = Regex("(\\d+( \\d+/\\d+)?|\\d+/\\d+)( [a-z.]+){0,2}")
     private val neverUse = policy.neverUseIngredients.map { Regex("\\b${Regex.escape(it.trim().lowercase())}") }
     private val allowedTools = policy.allowedTools.map { it.trim().lowercase() }.toSet()
