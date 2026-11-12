@@ -62,7 +62,7 @@ internal data class GeneratedRecipe(
     val servings: Int,
     val imageId: String = SnapPrompt.NO_IMAGE,
     val ingredients: List<GeneratedIngredient>,
-    val utensils: List<GeneratedItem>,
+    val utensils: List<GeneratedUtensil>,
     val steps: List<GeneratedStep>,
 )
 
@@ -76,7 +76,7 @@ internal data class GeneratedIngredient(
 
 /** A utensil: its simple name and sticker id. */
 @Serializable
-internal data class GeneratedItem(val name: String, val imageId: String = SnapPrompt.NO_IMAGE)
+internal data class GeneratedUtensil(val name: String, val imageId: String = SnapPrompt.NO_IMAGE)
 
 /** [ingredients] and [utensils] name items from the recipe's own lists. */
 @Serializable
