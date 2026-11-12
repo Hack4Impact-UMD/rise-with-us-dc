@@ -2,9 +2,6 @@ package org.hack4impact.risedc.core.data.snap
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
-import org.hack4impact.risedc.core.data.model.Recipe
-import org.hack4impact.risedc.core.data.model.RecipeSource
-import org.hack4impact.risedc.core.data.model.RecipeStatus
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -75,7 +72,7 @@ internal class GeminiSnapAndCook(
 
                     // Even one safe recipe is better than showing nothing, so don't spend a retry on more.
                     if (safe.isNotEmpty()) {
-                        return SnapResult.Recipes(safe.map { it.toRecipe() })
+                        return SnapResult.Recipes(safe.map { it.toRecipe(newId()) })
                     }
                     failure = FailureReason.INVALID_REPLY
                 }
@@ -84,23 +81,12 @@ internal class GeminiSnapAndCook(
         return SnapResult.Failed(failure)
     }
 
+    @OptIn(ExperimentalUuidApi::class)
+    private fun newId() = Uuid.random().toString()
+
     // timeout and retry constants for the GeminiSnapAndCook implementation
     private companion object {
         val DEADLINE = 30.seconds
         val RETRY_DELAY = 0.5.seconds
     }
-
-    // converts a GeneratedRecipe to a Recipe model with a new UUID and default status.
-    @OptIn(ExperimentalUuidApi::class)
-    private fun GeneratedRecipe.toRecipe() = Recipe(
-        id = Uuid.random().toString(),
-        title = title,
-        mealTypes = listOf(mealType),
-        minutes = minutes,
-        ingredients = ingredients,
-        utensils = utensils,
-        steps = steps,
-        source = RecipeSource.GENERATED,
-        status = RecipeStatus.PENDING,
-    )
 }
