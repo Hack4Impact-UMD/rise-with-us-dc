@@ -99,7 +99,7 @@ class SnapAndCookTest {
             recipe.copy(ingredients = listOf(recipe.ingredients.single().copy(name = "Raw Eggs"))),
             recipe.copy(ingredients = listOf(recipe.ingredients.single().copy(amount = "some"))),
             recipe.copy(utensils = tools("oven")),
-            recipe.copy(steps = List(7) { recipe.steps.single() }),
+            recipe.copy(steps = List(SnapPrompt.MAX_STEPS + 1) { recipe.steps.single() }),
             recipe.copy(steps = listOf(step(""))),
             recipe.copy(steps = listOf(step("Heat in the oven.", "HOT"))),
         )
@@ -318,6 +318,8 @@ class SnapAndCookTest {
             "Put the pan on the burner.", "Use the stove.", "Warm the skillet.", "Bake the beans.",
             "Add baking powder, then bake.", "Baking the beans.", "Melt the butter.", "Melting the butter.",
             "Add the melted butter, then melt the cheese.", "Bake on the baking sheet.",
+            "Microwave the bowl.", "Put the microwave-safe bowl in the microwave.",
+            "Microwave the microwave-safe bowl.", "Microwaving the peas.",
         )
         heatSteps.forEach { instruction ->
             val step = step(instruction)
@@ -335,6 +337,9 @@ class SnapAndCookTest {
             "Stir until Melted.",
             "Place the bagels on a baking sheet.",
             "Line two Baking Sheets with paper.",
+            "Add green peas to the microwave-safe bowl.",
+            "Mix the peas in the Microwave-Safe Bowl.",
+            "Pour the milk into the microwave safe bowl.",
         )
         coldSteps.forEach { instruction ->
             assertTrue(validator.accepts(recipe.copy(steps = listOf(step(instruction)))), instruction)
@@ -353,7 +358,7 @@ class SnapAndCookTest {
             "Chop the onion.",
             "Dice the tomato.",
             "Mince the garlic.",
-            "Peel the potato.",
+            "Peel the potato with the peeler.",
             "Grate the cheese.",
             "Shred the cheese.",
             "Shredding the cheese.",
