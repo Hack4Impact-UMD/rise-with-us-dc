@@ -23,8 +23,8 @@ data class Recipe(
 
 /**
  * [name] is the simple ingredient name shown on screen, not the catalog name.
- * [amount] is how much to buy a user would need to buy at the store for this recipe, 
-    not how much the recipe uses (for ex a "1 bag" of flour instead of "2 cups" of flour). 
+ * [amount] is how much a user would need to buy at the store for this recipe,
+ * not how much the recipe uses (for example "1 bag" of flour instead of "2 cups" of flour).
  * [imageId] is the closest sticker id from the catalog, or null if there's no good fit.
  */
 @Serializable
@@ -44,8 +44,8 @@ data class Utensil(val name: String, val imageId: String? = null)
 
 /**
  * [imageId] is the closest step-action sticker id, or null.
- * [ingredients] and [utensils] are the recipe's items this step uses, with their name 
- * and sticker id so each step carries everything the screen needs to display.
+ * [ingredients] and [utensils] are the recipe's items this step uses, with their names
+ * and sticker ids so each step carries everything the screen needs to display.
  */
 @Serializable
 data class RecipeStep(
