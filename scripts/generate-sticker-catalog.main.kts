@@ -11,11 +11,20 @@
 import java.io.File
 import kotlin.system.exitProcess
 
-/** Manifest folder prefixes that are ingredients. 11 household, 13 app icons, 14 dishes, 15 step tiles are left out. */
+/** Manifest folder prefixes that are ingredients. */
 val ingredientFolders = setOf("01", "02", "03", "04", "05", "06", "07", "08", "09", "12", "17")
 
 /** Manifest folder prefixes that are utensils. */
 val utensilFolders = setOf("10", "16")
+
+/** Finished dishes, used as a recipe's picture. */
+val dishFolders = setOf("14")
+
+/** Step action tiles (put, spread, mix...), used as a step's picture. */
+val stepFolders = setOf("15")
+
+/** 11 household and 13 app icons. Any folder in none of these sets fails the run, so a new one isn't dropped silently. */
+val skippedFolders = setOf("11", "13")
 
 /** Manifest store_section text -> StoreSection enum constant. Unknown text fails the run. */
 val sections = mapOf(
@@ -83,6 +92,8 @@ if (header != expected) fail("unexpected manifest header $header, expected $expe
 
 val ingredients = mutableListOf<Row>()
 val utensils = mutableListOf<Row>()
+val dishes = mutableListOf<Row>()
+val steps = mutableListOf<Row>()
 val seenIds = mutableSetOf<String>()
 val unsectioned = mutableListOf<String>()
 
@@ -92,8 +103,15 @@ for ((index, line) in lines.drop(1).withIndex()) {
     if (fields.size != expected.size) fail("line $lineNo has ${fields.size} fields, expected ${expected.size}")
     val (file, id, name, _, section) = fields.map { it.trim() }
     val folder = file.substringBefore('/').substringBefore('-')
+    if (folder in skippedFolders) continue
     val isIngredient = folder in ingredientFolders
-    if (!isIngredient && folder !in utensilFolders) continue
+    val target = when (folder) {
+        in ingredientFolders -> ingredients
+        in utensilFolders -> utensils
+        in dishFolders -> dishes
+        in stepFolders -> steps
+        else -> fail("line $lineNo is in folder $folder, which isn't listed; add it to a folder set at the top")
+    }
 
     if (id.isEmpty()) fail("line $lineNo has no id")
     if (name.isEmpty()) fail("line $lineNo ($id) has no name")
@@ -106,9 +124,9 @@ for ((index, line) in lines.drop(1).withIndex()) {
         } else {
             sections[section] ?: fail("line $lineNo ($id) has unknown store_section \"$section\"")
         }
-        ingredients += Row(id, name, enumName)
+        target += Row(id, name, enumName)
     } else {
-        utensils += Row(id, name, "")
+        target += Row(id, name, "")
     }
 }
 
@@ -144,10 +162,10 @@ val output = buildString {
     appendLine("/** An ingredient sticker. [id] is the manifest id and doubles as the image id. */")
     appendLine("data class IngredientSticker(val id: String, val name: String, val storeSection: StoreSection)")
     appendLine()
-    appendLine("/** A utensil sticker. [id] is the manifest id and doubles as the image id. */")
-    appendLine("data class UtensilSticker(val id: String, val name: String)")
+    appendLine("/** A utensil, dish or step sticker. [id] is the manifest id and doubles as the image id. */")
+    appendLine("data class Sticker(val id: String, val name: String)")
     appendLine()
-    appendLine("/** Every sticker the app can show for an ingredient or a utensil, keyed by manifest id. */")
+    appendLine("/** Every sticker the app can show for a recipe, ingredient, utensil or step, keyed by manifest id. */")
     appendLine("object StickerCatalog {")
     appendLine("    val ingredients: Map<String, IngredientSticker> = listOf(")
     for (r in ingredients.sortedWith(naturalOrder)) {
@@ -156,12 +174,14 @@ val output = buildString {
         )
     }
     appendLine("    ).associateBy { it.id }")
-    appendLine()
-    appendLine("    val utensils: Map<String, UtensilSticker> = listOf(")
-    for (r in utensils.sortedWith(naturalOrder)) {
-        appendLine("        UtensilSticker(${kotlinString(r.id)}, ${kotlinString(r.name)}),")
+    for ((property, rows) in listOf("utensils" to utensils, "dishes" to dishes, "steps" to steps)) {
+        appendLine()
+        appendLine("    val $property: Map<String, Sticker> = listOf(")
+        for (r in rows.sortedWith(naturalOrder)) {
+            appendLine("        Sticker(${kotlinString(r.id)}, ${kotlinString(r.name)}),")
+        }
+        appendLine("    ).associateBy { it.id }")
     }
-    appendLine("    ).associateBy { it.id }")
     appendLine("}")
 }
 
@@ -173,7 +193,10 @@ if (check) {
 } else {
     outFile.parentFile.mkdirs()
     outFile.writeText(output)
-    println("Wrote ${outFile.relativeTo(repoRoot)}: ${ingredients.size} ingredients, ${utensils.size} utensils.")
+    println(
+        "Wrote ${outFile.relativeTo(repoRoot)}: ${ingredients.size} ingredients, ${utensils.size} utensils, " +
+            "${dishes.size} dishes, ${steps.size} steps.",
+    )
 }
 if (unsectioned.isNotEmpty()) {
     println("${unsectioned.size} ingredients have no store_section in the manifest, using $fallbackSection: ${unsectioned.joinToString()}")
