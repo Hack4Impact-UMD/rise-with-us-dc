@@ -18,7 +18,9 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
             "oven|stove|burner|skillet)[a-z]*",
     )
     private val sharp = Regex(
-        "\\b((knife|knives|(?<!pre-)cut(?![- ]side\\b)|slic(?!es\\b)|chop|dic|minc|peeler|grate|shred)" +
+        // "a slice" and "1 slice" are amounts, not cutting.
+        "\\b((knife|knives|(?<!pre-)cut(?![- ]side\\b)|(?<!\\b(a|\\d{1,3}) )slic(?!es\\b)|" +
+            "chop|dic|minc|peeler|grate|shred)" +
             "(\\b|[a-z]*(?<!ed)\\b)|" +
             "can openers?|open(ing)?( (the|a))? (cans?|canned)\\b)",
     )
