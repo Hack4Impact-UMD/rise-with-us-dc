@@ -19,3 +19,8 @@ captures
 node_modules/
 .firebase/
 *.log
+
+# Local secrets
+.env
+.env.*
+!functions/.env.example
