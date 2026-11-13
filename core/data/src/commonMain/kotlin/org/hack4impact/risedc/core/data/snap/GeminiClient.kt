@@ -29,7 +29,7 @@ internal fun interface GeminiClient {
 internal class HttpGeminiClient(
     httpClient: HttpClient,
     private val apiKey: String,
-    private val model: String = "gemini-3.5-flash",
+    private val model: String = "gemini-3.8-flash",
 ) : GeminiClient {
     // Gemini sends nothing until the whole reply is ready, which can take 15-50 s. OkHttp's default
     // 10 s read timeout would report every slow reply as a network error, so wait past SnapAndCook's
