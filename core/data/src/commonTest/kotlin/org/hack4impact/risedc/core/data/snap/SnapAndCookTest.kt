@@ -369,7 +369,8 @@ class SnapAndCookTest {
             "Place the bagel cut side up, then cut the apple.",
             "Put 1 slice of bread on the plate, then slice the tomato.",
             "Put the cut tomato in the bowl, then cut the avocado.",
-            "Put the bread on the cutting board.",
+            "Cut the apple on the cutting board.",
+            "Put the apple on the cutting board, then cutting the apple.",
         )
         sharpSteps.forEach { instruction ->
             val step = step(instruction)
@@ -383,6 +384,9 @@ class SnapAndCookTest {
             "Put a slice of cheese on top of the bread.",
             "Put 12 slice of cheese on the plate.",
             "Put the cut tomato into the bowl.",
+            "Place the apple on the cutting board.",
+            "Put the bread on a cutting-board.",
+            "Wash the cutting boards.",
             "Sprinkle the shredded mozzarella cheese on top.",
             "Use sliced bagels.",
             "Add the chopped onion.",

@@ -19,8 +19,9 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
     )
     private val sharp = Regex(
         // "a slice" and "1 slice" are amounts, and "the cut tomato" is already cut, so neither is cutting.
-        // "the cutting board" still counts.
-        "\\b((knife|knives|(?<!pre-|\\bthe )cut(?![- ]side\\b)|(?<=\\bthe )cut(?=[a-z])|" +
+        // "cutting board" names a tool, like "microwave-safe bowl", so it isn't cutting either.
+        "\\b((knife|knives|(?<!pre-|\\bthe )cut(?![- ]side\\b|ting[- ]boards?\\b)|" +
+            "(?<=\\bthe )cut(?=[a-z])(?!ting[- ]boards?\\b)|" +
             "(?<!\\b(a|\\d{1,3}) )slic(?!es\\b)|chop|dic|minc|peeler|grate|shred)" +
             "(\\b|[a-z]*(?<!ed)\\b)|" +
             "can openers?|open(ing)?( (the|a))? (cans?|canned)\\b)",
