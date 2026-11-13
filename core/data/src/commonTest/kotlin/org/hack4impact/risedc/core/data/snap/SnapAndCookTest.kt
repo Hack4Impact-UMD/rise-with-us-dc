@@ -340,6 +340,7 @@ class SnapAndCookTest {
             "Add green peas to the microwave-safe bowl.",
             "Mix the peas in the Microwave-Safe Bowl.",
             "Pour the milk into the microwave safe bowl.",
+            "Mix the warm fruit with the spoon.",
         )
         coldSteps.forEach { instruction ->
             assertTrue(validator.accepts(recipe.copy(steps = listOf(step(instruction)))), instruction)
