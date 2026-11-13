@@ -18,11 +18,14 @@ internal class RecipeValidator(private val policy: SafetyPolicy) {
             "oven|stove|burner|skillet)[a-z]*",
     )
     private val sharp = Regex(
-        // "a slice" and "1 slice" are amounts, and "the cut tomato" is already cut, so neither is cutting.
-        // "cutting board" names a tool, like "microwave-safe bowl", so it isn't cutting either.
+        // "the cut tomato" is already cut, and "cutting board" names a tool, like "microwave-safe bowl".
+        // "Slice" counts only as an action: starting a sentence, after "then" or "and", before what gets
+        // sliced ("slice the", "slice 1"), or as "slicing". "1 slice of bread" and "the other slice" don't.
         "\\b((knife|knives|(?<!pre-|\\bthe )cut(?![- ]side\\b|ting[- ]boards?\\b)|" +
             "(?<=\\bthe )cut(?=[a-z])(?!ting[- ]boards?\\b)|" +
-            "(?<!\\b(a|\\d{1,3}) )slic(?!es\\b)|chop|dic|minc|peeler|grate|shred)" +
+            "(?<=^|\\. |\\bthen |\\band )slic(?!es\\b)|" +
+            "slic(?=ing\\b|e (the|a|an|it|them|into|up|each|both|\\d)\\b)|" +
+            "chop|dic|minc|peeler|grate|shred)" +
             "(\\b|[a-z]*(?<!ed)\\b)|" +
             "can openers?|open(ing)?( (the|a))? (cans?|canned)\\b)",
     )

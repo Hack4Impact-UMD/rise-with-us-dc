@@ -348,7 +348,7 @@ class SnapAndCookTest {
     }
 
     @Test
-    fun knifeActionsRequireSharpTagButPreparedFoodDoesNot() {
+    fun knifeActionsRequireSharpTag() {
         val validator = RecipeValidator(policy.copy(allowedTools = setOf("spoon", "knife")))
         val sharpSteps = listOf(
             "Slice the bagel.",
@@ -371,6 +371,11 @@ class SnapAndCookTest {
             "Put 1 slice of bread on the plate, then slice the tomato.",
             "Put the cut tomato in the bowl, then cut the avocado.",
             "Cut the apple on the cutting board.",
+            "Slice bananas into the bowl.",
+            "Put the bread on the plate. Slice the tomato.",
+            "Put the bread on the plate and slice the tomato.",
+            "Use the knife to slice 2 apples.",
+            "Keep slicing the bread.",
             "Put the apple on the cutting board, then cutting the apple.",
         )
         sharpSteps.forEach { instruction ->
@@ -378,6 +383,11 @@ class SnapAndCookTest {
             assertFalse(validator.accepts(recipe.copy(steps = listOf(step))), instruction)
             assertTrue(validator.accepts(recipe.copy(steps = listOf(step.copy(safety = listOf("SHARP"))))), instruction)
         }
+    }
+
+    @Test
+    fun preparedFoodAndCuttingBoardsDoNotNeedSharpTag() {
+        val validator = RecipeValidator(policy.copy(allowedTools = setOf("spoon", "knife")))
         val plainSteps = listOf(
             "Top with pepperoni slices.",
             "Add the Apple Slices.",
@@ -385,6 +395,10 @@ class SnapAndCookTest {
             "Put a slice of cheese on top of the bread.",
             "Put 12 slice of cheese on the plate.",
             "Put the cut tomato into the bowl.",
+            "Put the other slice of bread on top.",
+            "Put each slice on the plate.",
+            "Put the top slice on the sandwich.",
+            "Sliced apples go in the bowl.",
             "Place the apple on the cutting board.",
             "Put the bread on a cutting-board.",
             "Wash the cutting boards.",
