@@ -320,6 +320,7 @@ class SnapAndCookTest {
             "Add the melted butter, then melt the cheese.", "Bake on the baking sheet.",
             "Microwave the bowl.", "Put the microwave-safe bowl in the microwave.",
             "Microwave the microwave-safe bowl.", "Microwaving the peas.",
+            "Cooking the beans.", "Add the cooked beef, then cook the rice.",
         )
         heatSteps.forEach { instruction ->
             val step = step(instruction)
@@ -341,6 +342,7 @@ class SnapAndCookTest {
             "Mix the peas in the Microwave-Safe Bowl.",
             "Pour the milk into the microwave safe bowl.",
             "Mix the warm fruit with the spoon.",
+            "Scoop 2 tablespoons of cooked ground beef into each taco shell.",
         )
         coldSteps.forEach { instruction ->
             assertTrue(validator.accepts(recipe.copy(steps = listOf(step(instruction)))), instruction)

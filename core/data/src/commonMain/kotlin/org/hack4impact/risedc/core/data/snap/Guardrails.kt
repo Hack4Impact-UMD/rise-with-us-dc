@@ -13,7 +13,7 @@ data class SafetyPolicy(val neverUseIngredients: Set<String>, val allowedTools: 
 internal class RecipeValidator(private val policy: SafetyPolicy) {
     private val heat = Regex(
         "\\b(microwav(?!e[- ]safe\\b)|toast|(pre|re)?heat|hot|boil|broil|melt(?!ed\\b)|steam|" +
-            "bak(?!ing\\s+(powder|sheets?)\\b)|fry|stir-fr|grill|cook(?!ie|book)|simmer|roast|sear(?!ch)|" +
+            "bak(?!ing\\s+(powder|sheets?)\\b)|fry|stir-fr|grill|cook(?!ie|book|ed\\b)|simmer|roast|sear(?!ch)|" +
             "poach|saut|brais|stew|scald|sizzl|" +
             "oven|stove|burner|skillet)[a-z]*",
     )
