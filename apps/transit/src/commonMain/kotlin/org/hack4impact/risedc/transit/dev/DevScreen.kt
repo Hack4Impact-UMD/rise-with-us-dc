@@ -12,11 +12,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
+import org.hack4impact.risedc.core.common.location.LocationProvider
+import org.hack4impact.risedc.core.common.location.LocationResult
+import org.koin.compose.koinInject
+import kotlin.coroutines.cancellation.CancellationException
 
 @Composable
 fun DevScreen(onBack: () -> Unit) {
+    val locationProvider = koinInject<LocationProvider>()
     val scope = rememberCoroutineScope()
     var result by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
@@ -61,6 +65,19 @@ fun DevScreen(onBack: () -> Unit) {
             Text("Submit")
         }
 
+        Button(onClick = {
+            run { locationProvider.currentLocation().describe() }
+        }) {
+            Text("Get Location")
+        }
+
         Text(result)
     }
+}
+
+private fun LocationResult.describe(): String = when (this) {
+    is LocationResult.Success -> "Lat $lat, Lng $lng (±${accuracyMeters}m)"
+    LocationResult.PermissionDenied -> "Permission denied (on Android this also means never asked)"
+    LocationResult.ApproximateOnly -> "Approximate location only"
+    is LocationResult.Unavailable -> "Unavailable: $reason${detail?.let { " ($it)" } ?: ""}"
 }
