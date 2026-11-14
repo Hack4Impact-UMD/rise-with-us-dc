@@ -8,6 +8,9 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 internal actual val platformModule: Module = module {
-    single<LocationProvider> { IosLocationProvider() }
     single<Speaker> { IosSpeaker() }
+}
+
+fun iosLocationModule(): Module = module {
+    single<LocationProvider> { IosLocationProvider() }
 }
