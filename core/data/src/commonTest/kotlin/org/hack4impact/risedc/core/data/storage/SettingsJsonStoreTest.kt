@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.hack4impact.risedc.core.data.TestData.recipe
+import org.hack4impact.risedc.core.data.model.Utensil
 import org.hack4impact.risedc.core.data.network.RiseJson
 import org.hack4impact.risedc.core.data.recipes.RecipeStore
 import kotlin.test.Test
@@ -44,12 +45,12 @@ class SettingsJsonStoreTest {
     @Test
     fun failedUpdatesLeaveDataUnchanged() = runTest {
         val store = RecipeStore(settings, RiseJson)
-        val expected = recipe().copy(utensils = listOf("Spoon"))
-        store.save(expected.copy(utensils = mutableListOf("Spoon")))
+        val expected = recipe().copy(utensils = listOf(Utensil("Spoon")))
+        store.save(expected.copy(utensils = mutableListOf(Utensil("Spoon"))))
         failWrites = true
         assertFailsWith<IllegalStateException> {
             store.update(expected.id) { current ->
-                (current.utensils as MutableList<String>).clear()
+                (current.utensils as MutableList<Utensil>).clear()
                 current.copy(title = "Unsaved")
             }
         }
@@ -60,10 +61,10 @@ class SettingsJsonStoreTest {
     @Test
     fun updateReturnsIndependentCopies() = runTest {
         val store = RecipeStore(settings, RiseJson)
-        val expected = recipe().copy(utensils = listOf("Spoon"), title = "Updated")
-        store.save(expected.copy(title = "Original", utensils = mutableListOf("Spoon")))
+        val expected = recipe().copy(utensils = listOf(Utensil("Spoon")), title = "Updated")
+        store.save(expected.copy(title = "Original", utensils = mutableListOf(Utensil("Spoon"))))
         val returned = requireNotNull(store.update(expected.id) { it.copy(title = "Updated") })
-        (returned.utensils as MutableList<String>).clear()
+        (returned.utensils as MutableList<Utensil>).clear()
         assertEquals(expected, store.get(expected.id))
         assertEquals(expected, RecipeStore(backing, RiseJson).get(expected.id))
     }

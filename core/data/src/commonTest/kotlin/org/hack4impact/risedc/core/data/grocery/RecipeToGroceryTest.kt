@@ -79,7 +79,7 @@ class RecipeToGroceryTest {
         val list = GroceryList(id = "list").addRecipe(original).addRecipe(edited)
 
         assertEquals(listOf("Rice", "Black beans", "Onion", "Garlic"), list.items.map { it.name })
-        assertEquals("1 cup", list.items.first().amount)
+        assertEquals("1 bag", list.items.first().amount)
     }
 
     @Test

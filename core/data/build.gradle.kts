@@ -1,6 +1,11 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
+import java.util.Properties
+
 plugins {
     id("risedc.kmp.library")
     id("risedc.serialization")
+    id("risedc.buildkonfig")
 }
 
 kotlin {
@@ -15,6 +20,7 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.no.arg)
+            implementation(libs.kotlinx.datetime)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
@@ -31,4 +37,22 @@ kotlin {
             implementation(libs.multiplatform.settings.test)
         }
     }
+}
+
+// Gemini key: from local.properties (never committed) or the GEMINI_API_KEY env var in CI.
+val geminiApiKey: String = Properties()
+    .apply { rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load) }
+    .getProperty("GEMINI_API_KEY") ?: System.getenv("GEMINI_API_KEY") ?: ""
+
+buildkonfig {
+    packageName = "org.hack4impact.risedc.core.data"
+    defaultConfigs { buildConfigField(STRING, "GEMINI_API_KEY", geminiApiKey) }
+    // The web bundle is public, so it never carries the key (decision 0008).
+    targetConfigs { create("wasmJs") { buildConfigField(STRING, "GEMINI_API_KEY", "") } }
+}
+
+// Standalone simulator launches can fail system certificate validation during live API tests.
+// Use -PiosSimulatorStandalone=false with --device <booted-UDID> for live testing.
+tasks.withType<KotlinNativeSimulatorTest>().configureEach {
+    standalone.set(providers.gradleProperty("iosSimulatorStandalone").map { it.toBooleanStrict() }.orElse(true))
 }
