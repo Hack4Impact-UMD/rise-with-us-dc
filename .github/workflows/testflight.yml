@@ -1,0 +1,158 @@
+name: TestFlight
+
+# Uploads a build of each iOS app for every push to a same-repo PR, so the
+# team can install the PR on a phone from TestFlight (internal testers only).
+
+on:
+  workflow_call:
+
+# A newer push to the same PR replaces the build in progress.
+concurrency:
+  group: testflight-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    # Signing secrets never reach fork or Dependabot PRs, and fork code must not run on the Mac mini.
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [Recipes, Transit]
+    # The build number each app uploaded, e.g. {Recipes: "42.1"}. Matrix outputs merge across legs.
+    outputs:
+      Recipes: ${{ steps.upload.outputs.Recipes }}
+      Transit: ${{ steps.upload.outputs.Transit }}
+    env:
+      # Unique for every run and re-run, e.g. 42.1. Not ordered across PRs: re-running an old run uploads 40.2 after 42.1.
+      BUILD_NUMBER: ${{ github.run_number }}.${{ github.run_attempt }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The PR head, not the merge commit, so the build matches the branch testers read about.
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Write App Store Connect key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          if [ -z "$ASC_KEY_P8" ] || [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$TEAM_ID" ]; then
+            echo "::error::Missing ASC_KEY_P8 / ASC_KEY_ID / ASC_ISSUER_ID secrets or APPLE_TEAM_ID variable"
+            exit 1
+          fi
+          ASC_KEY_PATH="$RUNNER_TEMP/AuthKey-${{ matrix.app }}.p8"
+          {
+            echo "ARCHIVE_PATH=$RUNNER_TEMP/${{ matrix.app }}.xcarchive"
+            echo "EXPORT_PATH=$RUNNER_TEMP/${{ matrix.app }}-export"
+            echo "ASC_KEY_PATH=$ASC_KEY_PATH"
+          } >> "$GITHUB_ENV"
+          umask 077
+          printf '%s\n' "$ASC_KEY_P8" > "$ASC_KEY_PATH"
+
+      - name: Archive ${{ matrix.app }}
+        working-directory: iosApp/${{ matrix.app }}
+        run: >-
+          xcodebuild archive
+          -project iosApp.xcodeproj -scheme iosApp -configuration Release
+          -destination 'generic/platform=iOS'
+          -archivePath "$ARCHIVE_PATH"
+          -allowProvisioningUpdates
+          -authenticationKeyPath "$ASC_KEY_PATH"
+          -authenticationKeyID "$ASC_KEY_ID"
+          -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          DEVELOPMENT_TEAM="$TEAM_ID"
+          CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+
+      - name: Upload to TestFlight
+        id: upload
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>testFlightInternalTestingOnly</key><true/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$EXPORT_PATH" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          echo "${{ matrix.app }}=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' "$ARCHIVE_PATH/Info.plist")
+          echo "**${{ matrix.app }}** $VERSION ($BUILD_NUMBER) uploaded to TestFlight. It shows up in the TestFlight app once Apple finishes processing (usually 5–15 min)." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clean up
+        if: always()
+        run: rm -rf "$ASC_KEY_PATH" "$ARCHIVE_PATH" "$EXPORT_PATH" "$RUNNER_TEMP/ExportOptions.plist"
+
+  notes:
+    # Waits for Apple to process each upload, then sets its "What to Test" note.
+    # On a GitHub-hosted runner so the Mac mini isn't held while Apple processes.
+    # Still runs when one app's upload failed, so the other app gets its note.
+    needs: upload
+    if: ${{ !cancelled() && needs.upload.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [Recipes, Transit]
+    env:
+      BUILD_NUMBER: ${{ needs.upload.outputs[matrix.app] }}
+    steps:
+      - uses: actions/checkout@v5
+        if: env.BUILD_NUMBER != ''
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          sparse-checkout: |
+            .github/scripts
+            iosApp/${{ matrix.app }}/Configuration
+
+      - name: Set "What to Test"
+        if: env.BUILD_NUMBER != ''
+        # Upload already succeeded; a failure here only means the note is missing.
+        continue-on-error: true
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          BUNDLE_ID=$(sed -n 's/^PRODUCT_BUNDLE_IDENTIFIER *= *//p' "iosApp/${{ matrix.app }}/Configuration/Config.xcconfig")
+          WHATS_NEW="$(printf 'PR #%s: %s\nBranch: %s (%s)\nBy: %s\n%s' \
+            "$PR_NUMBER" "$PR_TITLE" "$PR_BRANCH" "${HEAD_SHA:0:7}" "$PR_AUTHOR" "$PR_URL")"
+          export BUNDLE_ID WHATS_NEW
+          node .github/scripts/testflight-notes.mjs

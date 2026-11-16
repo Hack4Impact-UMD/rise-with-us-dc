@@ -1,9 +1,7 @@
 name: iOS
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_call:
 
 jobs:
   build:
@@ -16,6 +14,8 @@ jobs:
         app: [Recipes, Transit]
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-java@v5
         with:
           distribution: zulu

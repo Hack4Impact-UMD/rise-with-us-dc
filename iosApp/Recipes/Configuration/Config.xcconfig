@@ -5,3 +5,6 @@ PRODUCT_BUNDLE_IDENTIFIER=org.hack4impact.risedc.recipes
 
 CURRENT_PROJECT_VERSION=1
 MARKETING_VERSION=0.1.0
+
+// HTTPS only, so exempt; skips the export compliance prompt on every TestFlight build
+INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO
