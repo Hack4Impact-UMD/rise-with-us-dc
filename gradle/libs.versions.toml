@@ -11,9 +11,11 @@ junit = "4.13.2"
 kotlin = "2.4.20"
 material3 = "1.12.0-alpha03"
 # Added for RISE DC.
+buildkonfig = "0.23.0"
 detekt = "2.0.0-alpha.6"
 koin = "4.2.2"
 kotlinx-coroutines = "1.11.0"
+kotlinx-datetime = "0.8.0"
 kotlinx-serialization = "1.11.0"
 ktlint-gradle = "14.2.0"
 ktor = "3.6.0"
@@ -42,6 +44,7 @@ koin-compose = { module = "io.insert-koin:koin-compose" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
@@ -62,6 +65,7 @@ gradlePlugin-composeCompiler = { module = "org.jetbrains.kotlin:compose-compiler
 gradlePlugin-composeMultiplatform = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "composeMultiplatform" }
 gradlePlugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 gradlePlugin-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint-gradle" }
+gradlePlugin-buildkonfig = { module = "com.codingfeline.buildkonfig:buildkonfig-gradle-plugin", version.ref = "buildkonfig" }
 gradlePlugin-detekt = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 
 [plugins]

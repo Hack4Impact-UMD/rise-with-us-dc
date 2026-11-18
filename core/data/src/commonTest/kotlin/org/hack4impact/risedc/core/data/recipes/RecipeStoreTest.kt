@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.hack4impact.risedc.core.data.TestData.recipe
 import org.hack4impact.risedc.core.data.model.RecipeStatus
+import org.hack4impact.risedc.core.data.model.Utensil
 import org.hack4impact.risedc.core.data.network.RiseJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -141,7 +142,9 @@ class RecipeStoreTest {
     fun concurrentUpdatesAreAllKept() = runTest {
         val store = newStore()
         store.save(recipe().copy(utensils = emptyList()))
-        (1..20).map { n -> async { store.update("recipe-1") { it.copy(utensils = it.utensils + "u$n") } } }.awaitAll()
+        (1..20).map { n ->
+            async { store.update("recipe-1") { it.copy(utensils = it.utensils + Utensil("u$n")) } }
+        }.awaitAll()
         assertEquals(20, newStore().get("recipe-1")?.utensils?.size)
     }
 

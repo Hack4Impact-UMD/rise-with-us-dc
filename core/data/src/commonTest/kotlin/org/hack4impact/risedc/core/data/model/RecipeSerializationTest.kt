@@ -17,7 +17,7 @@ class RecipeSerializationTest {
 
     @Test
     fun minimalRecipeRoundTripsUnchanged() {
-        val recipe = Recipe(id = "r", title = "Toast", minutes = 2, source = RecipeSource.GENERATED)
+        val recipe = Recipe(id = "r", title = "Toast", minutes = 2, servings = 1, source = RecipeSource.GENERATED)
         val decoded = json.decodeFromString(Recipe.serializer(), json.encodeToString(Recipe.serializer(), recipe))
         assertEquals(recipe, decoded)
     }
