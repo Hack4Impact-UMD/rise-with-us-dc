@@ -1,5 +1,5 @@
 plugins {
-    id("risedc.compose")
+    id("risedc.kmp.library")
 }
 
 kotlin {

@@ -1,4 +1,4 @@
-package org.hack4impact.risedc.core.common.recipesComponents
+package org.hack4impact.risedc.core.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,7 +40,6 @@ fun ScreenHeader(title: String, modifier: Modifier = Modifier, onBack: (() -> Un
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
     }

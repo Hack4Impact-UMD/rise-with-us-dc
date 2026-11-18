@@ -1,4 +1,4 @@
-package org.hack4impact.risedc.core.common.recipesComponents
+package org.hack4impact.risedc.core.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -27,7 +27,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-
+import org.jetbrains.compose.resources.painterResource
+import org.hack4impact.risedc.core.ui.generated.resources.Res
+import org.hack4impact.risedc.core.ui.generated.resources.ic_image_placeholder
 enum class PictureCardSize { Large, Compact }
 
 @Composable
@@ -49,7 +51,7 @@ fun PictureCard(
         shape = RoundedCornerShape(12.dp),
         interactionSource = interactionSource,
         border = if (focused) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Column {
             // Picture on top (null painter = tint + image icon)
@@ -58,7 +60,14 @@ fun PictureCard(
                     Image(painter, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 } else {
                     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant), Alignment.Center) {
-                        Icon(PlaceholderIcon, null, Modifier.size(40.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(
+                            painter = painterResource(
+                                Res.drawable.ic_image_placeholder
+                            ),
+                            contentDescription = null,
+                            modifier = Modifier.size(40.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }

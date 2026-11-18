@@ -1,4 +1,4 @@
-package org.hack4impact.risedc.core.common.recipesComponents
+package org.hack4impact.risedc.core.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement

@@ -1,18 +1,25 @@
-package org.hack4impact.risedc.core.common.recipesComponents
+package org.hack4impact.risedc.core.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,27 +57,35 @@ fun BandSheetScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    Box(modifier.fillMaxSize().background(colors.surface)) {
+    BoxWithConstraints(modifier.fillMaxSize().background(colors.surface)) {
+        val compact = maxHeight < 480.dp
+        val effectiveBandHeight = if (compact) minOf(bandHeight, 80.dp) else bandHeight
         // Band: background first so it also covers the status bar area.
         Box(
             Modifier
                 .fillMaxWidth()
                 .background(colors.primary)
                 .statusBarsPadding()
-                .height(bandHeight),
+                .height(effectiveBandHeight),
             content = bandContent,
         )
 
         // Sheet
         Column(Modifier.fillMaxSize()) {
             Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-            Spacer(Modifier.height(bandHeight - sheetOverlap))
+            Spacer(Modifier.height(effectiveBandHeight - sheetOverlap))
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 color = colors.surface,
             ) {
-                Column(Modifier.fillMaxSize().padding(horizontal = 28.dp)) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal))
+                        .padding(horizontal = 28.dp)
+                ) { 
                     Text(
                         text = title,
                         modifier = Modifier.padding(top = 36.dp).semantics { heading() },
@@ -87,14 +102,9 @@ fun BandSheetScaffold(
                             color = colors.onSurface,
                         )
                     }
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(top = 16.dp)
-                            .verticalScroll(rememberScrollState()),
-                        content = content,
-                    )
+                    Spacer(Modifier.height(16.dp))
+                    content()
+                    Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
                 }
             }
         }

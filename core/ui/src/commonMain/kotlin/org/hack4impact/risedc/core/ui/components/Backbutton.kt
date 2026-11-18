@@ -1,4 +1,4 @@
-package org.hack4impact.risedc.core.common.recipesComponents
+package org.hack4impact.risedc.core.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,10 +11,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.painterResource
+import org.hack4impact.risedc.core.ui.generated.resources.Res
+import org.hack4impact.risedc.core.ui.generated.resources.ic_back
 
 enum class BackButtonStyle {
     /** Outlined disc, for use on white. */
@@ -41,16 +43,18 @@ fun BackButton(
     ) {
         val discModifier = when (style) {
             BackButtonStyle.OnLight ->
-                Modifier.background(colors.surface, CircleShape).border(1.dp, colors.outlineVariant, CircleShape)
+                Modifier
+                    .background(colors.surface, CircleShape)
+                    .border(1.dp, colors.outlineVariant, CircleShape)
             BackButtonStyle.OnColor ->
-                Modifier.background(Color.White, CircleShape)
+                Modifier.background(colors.surface, CircleShape)
         }
         Box(
             modifier = Modifier.size(32.dp).then(discModifier),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = BackArrowIcon,
+                painter = painterResource(Res.drawable.ic_back),
                 contentDescription = null, // described on the button
                 modifier = Modifier.size(18.dp),
                 tint = colors.onSurface,
