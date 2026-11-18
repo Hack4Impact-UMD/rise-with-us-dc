@@ -27,8 +27,8 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.hack4impact.risedc.core.ui.generated.resources.Res
-import org.hack4impact.risedc.core.ui.generated.resources.ic_image_placeholder
+import org.hack4impact.risedc.core.ui.resources.Res
+import org.hack4impact.risedc.core.ui.resources.ic_image_placeholder
 import org.jetbrains.compose.resources.painterResource
 enum class PictureCardSize { Large, Compact }
 

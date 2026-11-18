@@ -20,8 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import org.hack4impact.risedc.core.ui.generated.resources.Res
-import org.hack4impact.risedc.core.ui.generated.resources.ic_check
+import org.hack4impact.risedc.core.ui.resources.Res
+import org.hack4impact.risedc.core.ui.resources.ic_check
 import org.jetbrains.compose.resources.painterResource
 
 /**
