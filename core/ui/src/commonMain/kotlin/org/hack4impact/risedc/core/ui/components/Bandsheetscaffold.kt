@@ -3,7 +3,7 @@ package org.hack4impact.risedc.core.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.BoxWithConstraints 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -84,8 +84,8 @@ fun BandSheetScaffold(
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal))
-                        .padding(horizontal = 28.dp)
-                ) { 
+                        .padding(horizontal = 28.dp),
+                ) {
                     Text(
                         text = title,
                         modifier = Modifier.padding(top = 36.dp).semantics { heading() },

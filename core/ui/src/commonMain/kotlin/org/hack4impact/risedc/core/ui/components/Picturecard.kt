@@ -27,9 +27,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.resources.painterResource
 import org.hack4impact.risedc.core.ui.generated.resources.Res
 import org.hack4impact.risedc.core.ui.generated.resources.ic_image_placeholder
+import org.jetbrains.compose.resources.painterResource
 enum class PictureCardSize { Large, Compact }
 
 @Composable
@@ -62,11 +62,11 @@ fun PictureCard(
                     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant), Alignment.Center) {
                         Icon(
                             painter = painterResource(
-                                Res.drawable.ic_image_placeholder
+                                Res.drawable.ic_image_placeholder,
                             ),
                             contentDescription = null,
                             modifier = Modifier.size(40.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

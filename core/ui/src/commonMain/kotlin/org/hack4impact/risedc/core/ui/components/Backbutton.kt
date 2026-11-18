@@ -14,9 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.resources.painterResource
 import org.hack4impact.risedc.core.ui.generated.resources.Res
 import org.hack4impact.risedc.core.ui.generated.resources.ic_back
+import org.jetbrains.compose.resources.painterResource
 
 enum class BackButtonStyle {
     /** Outlined disc, for use on white. */
