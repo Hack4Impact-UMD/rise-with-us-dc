@@ -11,6 +11,12 @@ import kotlinx.serialization.Serializable
  */
 sealed interface RecipesRoute {
     @Serializable
+    data object Home : RecipesRoute
+
+    @Serializable
+    data object AddRecipe : RecipesRoute
+
+    @Serializable
     data object Library : RecipesRoute
 
     @Serializable

@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import org.hack4impact.risedc.core.ui.placeholder.PlaceholderScreen
+import org.hack4impact.risedc.recipes.home.HomeScreen
 
 // Sample argument so the placeholder graph can be clicked through before real data exists.
 private const val SAMPLE_RECIPE_ID = "sample"
@@ -16,10 +17,34 @@ private const val SAMPLE_RECIPE_ID = "sample"
 fun RecipesNavHost(navController: NavHostController = rememberNavController()) {
     val back: () -> Unit = { navController.popBackStack() }
 
-    NavHost(navController = navController, startDestination = RecipesRoute.Library) {
+    NavHost(navController = navController, startDestination = RecipesRoute.Home) {
+        composable<RecipesRoute.Home> {
+            HomeScreen(
+                onCreateRecipeClick = { navController.navigate(RecipesRoute.Snap) },
+                onRecipesClick = { navController.navigate(RecipesRoute.Library) },
+                onGroceriesClick = { navController.navigate(RecipesRoute.GroceryList) },
+                onAddRecipeClick = { navController.navigate(RecipesRoute.AddRecipe) },
+                onSettingsClick = { navController.navigate(RecipesRoute.StaffSettings) },
+            )
+        }
         composable<RecipesRoute.Library> {
             PlaceholderScreen(
                 title = "Library",
+                links = listOf(
+                    "Get Ready" to { navController.navigate(RecipesRoute.GetReady(SAMPLE_RECIPE_ID)) },
+                    "Snap & Cook" to { navController.navigate(RecipesRoute.Snap) },
+                    "Grocery List" to { navController.navigate(RecipesRoute.GroceryList) },
+                    "Staff" to { navController.navigate(RecipesRoute.StaffHome) },
+                ),
+            )
+        }
+        composable<RecipesRoute.AddRecipe> {
+            PlaceholderScreen(title = "Add Recipe", onBack = back)
+        }
+        composable<RecipesRoute.Library> {
+            PlaceholderScreen(
+                title = "Library",
+                onBack = back,
                 links = listOf(
                     "Get Ready" to { navController.navigate(RecipesRoute.GetReady(SAMPLE_RECIPE_ID)) },
                     "Snap & Cook" to { navController.navigate(RecipesRoute.Snap) },

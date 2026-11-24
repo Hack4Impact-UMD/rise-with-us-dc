@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.hack4impact.risedc.core.ui.resources.Res
@@ -39,10 +40,12 @@ fun PictureCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: PictureCardSize = PictureCardSize.Large,
+    imageAspectRatio: Float? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val focused by interactionSource.collectIsFocusedAsState()
     val large = size == PictureCardSize.Large
+    val ratio = imageAspectRatio ?: if (large) 8f / 5f else 2f
 
     // The whole card is one button. Pressed = built-in ripple; focused = outline.
     Card(
@@ -51,7 +54,10 @@ fun PictureCard(
         shape = RoundedCornerShape(12.dp),
         interactionSource = interactionSource,
         border = if (focused) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
     ) {
         Column {
             // Picture on top (null painter = tint + image icon)
@@ -74,8 +80,13 @@ fun PictureCard(
             // Centered label strip below
             Text(
                 text = label,
-                modifier = Modifier.fillMaxWidth().padding(vertical = if (large) 22.dp else 18.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // added horizontal = 16.dp so wrapped text won't touch card edges at 200% font size
+                    .padding(horizontal = 16.dp, vertical = if (large) 20.dp else 16.dp),
                 style = if (large) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
         }
