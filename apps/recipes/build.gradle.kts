@@ -4,4 +4,5 @@ plugins {
 
 compose.resources {
     packageOfResClass = "org.hack4impact.risedc.recipes.resources"
+    generateResClass = never
 }
